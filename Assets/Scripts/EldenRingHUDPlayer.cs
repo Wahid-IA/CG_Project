@@ -21,7 +21,7 @@ public class EldenRingHUDPlayer : MonoBehaviour
     public float staminaRegenRate = 35f;
     public float rollStaminaCost = 25f;
     public float sprintStaminaCost = 15f;
-    public float attackStaminaCost = 20f; // New: Stamina cost to swing weapon
+    public float attackStaminaCost = 20f;
 
     [Header("UI Bar References (Drag & Drop)")]
     public Image healthFillImage;
@@ -37,9 +37,13 @@ public class EldenRingHUDPlayer : MonoBehaviour
     [Header("Melee Combat & Hitbox")]
     public float attackCooldown = 0.8f;
     private float lastAttackTime = 0f;
-    public float attackRange = 2.2f;      // Hitbox forward offset
-    public float attackRadius = 1.2f;     // Hitbox sphere size
-    public LayerMask enemyLayer;          // Layer to detect enemies
+    public float attackRange = 2.2f;
+    public float attackRadius = 1.2f;
+
+    [Header("Target Lock Settings")]
+    public float lockRange = 15f;
+    private Transform currentTarget;
+    private bool isLockedOn = false;
 
     [Header("Physics")]
     public float gravity = -9.81f;
@@ -57,6 +61,32 @@ public class EldenRingHUDPlayer : MonoBehaviour
     {
         HandleStamina();
         UpdateUI();
+
+        // Toggle Target Lock with 'Q' key
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            if (isLockedOn) UnlockTarget();
+            else FindNearestEnemy();
+        }
+
+        // Maintain Target Lock Facing
+        if (isLockedOn && currentTarget != null)
+        {
+            if (Vector3.Distance(transform.position, currentTarget.position) > lockRange)
+            {
+                UnlockTarget();
+            }
+            else
+            {
+                Vector3 dirToTarget = (currentTarget.position - transform.position).normalized;
+                dirToTarget.y = 0;
+                if (dirToTarget != Vector3.zero)
+                {
+                    Quaternion lookRot = Quaternion.LookRotation(dirToTarget);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, Time.deltaTime * 15f);
+                }
+            }
+        }
 
         if (isRolling)
         {
@@ -96,11 +126,16 @@ public class EldenRingHUDPlayer : MonoBehaviour
 
         if (direction.magnitude >= 0.1f)
         {
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
-            float angle = Mathf.LerpAngle(transform.eulerAngles.y, targetAngle, rotationSpeed * Time.deltaTime);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            Vector3 moveDir = Quaternion.Euler(0f, camTransform.eulerAngles.y, 0f) * direction;
+            
+            // If NOT locked on, rotate player to movement direction
+            if (!isLockedOn)
+            {
+                float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
+                float angle = Mathf.LerpAngle(transform.eulerAngles.y, targetAngle, rotationSpeed * Time.deltaTime);
+                transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            }
 
-            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
             controller.Move(moveDir.normalized * currentSpeed * Time.deltaTime);
         }
 
@@ -112,7 +147,6 @@ public class EldenRingHUDPlayer : MonoBehaviour
 
     void HandleCombat()
     {
-        // Left Mouse Click to Attack (with cooldown and stamina check)
         if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown)
         {
             if (currentStamina >= attackStaminaCost)
@@ -132,18 +166,14 @@ public class EldenRingHUDPlayer : MonoBehaviour
         currentStamina -= attackStaminaCost;
         Debug.Log("Player swings weapon!");
 
-        // Create a spatial hitbox check directly in front of the player
         Vector3 hitBoxCenter = transform.position + transform.forward * attackRange + Vector3.up * 1f;
         Collider[] hitEnemies = Physics.OverlapSphere(hitBoxCenter, attackRadius);
 
         foreach (Collider col in hitEnemies)
         {
-            // Check if the hit object has the "Enemy" tag
             if (col.CompareTag("Enemy"))
             {
                 Debug.Log("Hit enemy: " + col.name);
-                
-                // Visual feedback: make the enemy flash red temporarily
                 Renderer enemyRenderer = col.GetComponent<Renderer>();
                 if (enemyRenderer != null)
                 {
@@ -159,6 +189,37 @@ public class EldenRingHUDPlayer : MonoBehaviour
         rend.material.color = Color.red;
         yield return new WaitForSeconds(0.2f);
         rend.material.color = originalColor;
+    }
+
+    void FindNearestEnemy()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        float shortestDistance = Mathf.Infinity;
+        Transform nearestEnemy = null;
+
+        foreach (GameObject enemy in enemies)
+        {
+            float dist = Vector3.Distance(transform.position, enemy.transform.position);
+            if (dist < shortestDistance && dist <= lockRange)
+            {
+                shortestDistance = dist;
+                nearestEnemy = enemy.transform;
+            }
+        }
+
+        if (nearestEnemy != null)
+        {
+            currentTarget = nearestEnemy;
+            isLockedOn = true;
+            Debug.Log("Locked onto: " + currentTarget.name);
+        }
+    }
+
+    void UnlockTarget()
+    {
+        isLockedOn = false;
+        currentTarget = null;
+        Debug.Log("Target unlocked.");
     }
 
     void StartRoll(Vector3 inputDir)
@@ -193,13 +254,5 @@ public class EldenRingHUDPlayer : MonoBehaviour
 
         if (staminaFillImage != null)
             staminaFillImage.fillAmount = Mathf.Lerp(staminaFillImage.fillAmount, currentStamina / maxStamina, Time.deltaTime * 15f);
-    }
-
-    // Optional: Draw the attack hitbox sphere in the Scene view so you can see its range
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.yellow;
-        Vector3 hitBoxCenter = transform.position + transform.forward * attackRange + Vector3.up * 1f;
-        Gizmos.DrawWireSphere(hitBoxCenter, attackRadius);
     }
 }
