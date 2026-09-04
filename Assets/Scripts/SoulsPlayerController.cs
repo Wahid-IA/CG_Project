@@ -5,10 +5,11 @@ public class SoulsPlayerController : MonoBehaviour
 {
     private CharacterController controller;
     private Transform camTransform;
+    private Animator animator; // <--- ADDED: Animator Reference
 
     [Header("Movement Settings")]
-    public float walkSpeed = 5f;
-    public float runSpeed = 9f;
+    public float walkSpeed = 1.75f;
+    public float runSpeed = 5f;
     public float rotationSpeed = 15f;
     private float currentSpeed;
 
@@ -34,6 +35,9 @@ public class SoulsPlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         
+        // <--- ADDED: Finds Animator on child FBX model
+        animator = GetComponentInChildren<Animator>();
+
         if (Camera.main != null)
         {
             camTransform = Camera.main.transform;
@@ -72,17 +76,27 @@ public class SoulsPlayerController : MonoBehaviour
         {
             currentSpeed = runSpeed;
             currentStamina -= sprintStaminaCost * Time.deltaTime;
-            // Debug.Log("Sprinting! Stamina: " + currentStamina);
         }
         else
         {
             currentSpeed = walkSpeed;
         }
 
+        // <--- ADDED: Calculate & Send Speed parameter to Animator
+        float animSpeed = 0f;
+        if (direction.magnitude >= 0.1f)
+        {
+            animSpeed = isSprinting ? 1.0f : 0.5f; // 1.0 triggers Run (>0.7), 0.5 triggers Walk (>0.1)
+        }
+
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", animSpeed);
+        }
+
         // Dodge roll input (Spacebar)
         if (Input.GetKeyDown(KeyCode.Space) && currentStamina >= rollStaminaCost)
         {
-            // If standing still, roll forward based on camera or player facing direction
             Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;
             StartRoll(rollInput);
             return;
@@ -112,9 +126,17 @@ public class SoulsPlayerController : MonoBehaviour
         isRolling = true;
         rollTimer = rollDuration;
         currentStamina -= rollStaminaCost;
-        Debug.Log("Dodge Roll Executed! Remaining Stamina: " + currentStamina);
+
+        // <--- ADDED: Trigger Roll Animation in Animator
+        if (animator != null)
+        {
+            animator.SetTrigger("Roll");
+        }
 
         float targetAngle = Mathf.Atan2(inputDir.x, inputDir.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
+        
+        // Instantly rotate player toward roll direction
+        transform.rotation = Quaternion.Euler(0f, targetAngle, 0f);
         rollDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
     }
 
@@ -131,7 +153,6 @@ public class SoulsPlayerController : MonoBehaviour
 
     void HandleStamina()
     {
-        // Regenerate stamina if not sprinting or rolling
         if (!Input.GetKey(KeyCode.LeftShift) && !isRolling)
         {
             currentStamina = Mathf.Clamp(currentStamina + staminaRegenRate * Time.deltaTime, 0f, maxStamina);
