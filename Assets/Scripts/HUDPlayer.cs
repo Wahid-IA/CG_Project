@@ -50,13 +50,14 @@ public class HUDPlayer : MonoBehaviour
     public float gravity = -9.81f;
     private Vector3 velocity;
 
-   void Start()
+    void Start()
     {
         controller = GetComponent<CharacterController>();
         camTransform = Camera.main != null ? Camera.main.transform : transform;
         currentHealth = maxHealth;
         currentStamina = maxStamina;
     }
+
     void Update()
     {
         HandleStamina();
@@ -155,25 +156,18 @@ public class HUDPlayer : MonoBehaviour
     {
         lastAttackTime = Time.time;
         currentStamina -= attackStaminaCost;
-        Debug.Log("Player swings weapon!");
 
-        // Larger radius (2.5f) and forward range (2.5f) to ensure it hits easily
-        Vector3 hitBoxCenter = transform.position + transform.forward * 2.5f + Vector3.up * 1f;
-        Collider[] hitEnemies = Physics.OverlapSphere(hitBoxCenter, 2.5f);
+        Vector3 hitBoxCenter = transform.position + transform.forward * attackRange + Vector3.up * 1f;
+        Collider[] hitEnemies = Physics.OverlapSphere(hitBoxCenter, attackRadius);
 
         foreach (Collider col in hitEnemies)
         {
-            Debug.Log("OverlapSphere hit object: " + col.name + " with tag: " + col.tag);
-
-            if (col.CompareTag("Enemy") || col.transform.root.CompareTag("Enemy"))
+            if (col.CompareTag("Enemy"))
             {
-                // Check for BossController on this object or its parent
                 BossController boss = col.GetComponentInParent<BossController>();
                 if (boss != null)
                 {
-                    Debug.Log("SUCCESS: Dealt " + attackDamage + " damage to boss!");
                     boss.TakeDamage(attackDamage);
-                    break; // Hit once per swing
                 }
             }
         }
