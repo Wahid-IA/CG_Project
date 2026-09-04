@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(CharacterController))]
-public class EldenRingHUDPlayer : MonoBehaviour
+public class HUDPlayer : MonoBehaviour
 {
     private CharacterController controller;
     private Transform camTransform;
@@ -23,24 +23,25 @@ public class EldenRingHUDPlayer : MonoBehaviour
     public float sprintStaminaCost = 15f;
     public float attackStaminaCost = 20f;
 
-    [Header("UI Bar References (Drag & Drop)")]
+    [Header("UI Bar References")]
     public Image healthFillImage;
     public Image staminaFillImage;
 
-    [Header("Dodge Roll Settings")]
+    [Header("Dodge Roll")]
     public float rollSpeed = 13f;
     public float rollDuration = 0.35f;
     private bool isRolling = false;
     private float rollTimer = 0f;
     private Vector3 rollDirection;
 
-    [Header("Melee Combat & Hitbox")]
+    [Header("Melee Combat")]
     public float attackCooldown = 0.8f;
     private float lastAttackTime = 0f;
     public float attackRange = 2.2f;
     public float attackRadius = 1.2f;
+    public float attackDamage = 25f;
 
-    [Header("Target Lock Settings")]
+    [Header("Target Lock")]
     public float lockRange = 15f;
     private Transform currentTarget;
     private bool isLockedOn = false;
@@ -62,14 +63,14 @@ public class EldenRingHUDPlayer : MonoBehaviour
         HandleStamina();
         UpdateUI();
 
-        // Toggle Target Lock with 'Q' key
+        // Target Lock toggle with Q
         if (Input.GetKeyDown(KeyCode.Q))
         {
             if (isLockedOn) UnlockTarget();
             else FindNearestEnemy();
         }
 
-        // Maintain Target Lock Facing
+        // Maintain Target Lock rotation
         if (isLockedOn && currentTarget != null)
         {
             if (Vector3.Distance(transform.position, currentTarget.position) > lockRange)
@@ -116,7 +117,7 @@ public class EldenRingHUDPlayer : MonoBehaviour
             currentSpeed = walkSpeed;
         }
 
-        // Dodge Roll (Spacebar)
+        // Spacebar Dodge Roll
         if (Input.GetKeyDown(KeyCode.Space) && currentStamina >= rollStaminaCost)
         {
             Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;
@@ -127,8 +128,7 @@ public class EldenRingHUDPlayer : MonoBehaviour
         if (direction.magnitude >= 0.1f)
         {
             Vector3 moveDir = Quaternion.Euler(0f, camTransform.eulerAngles.y, 0f) * direction;
-            
-            // If NOT locked on, rotate player to movement direction
+
             if (!isLockedOn)
             {
                 float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
@@ -153,10 +153,6 @@ public class EldenRingHUDPlayer : MonoBehaviour
             {
                 PerformMeleeAttack();
             }
-            else
-            {
-                Debug.Log("Not enough stamina to attack!");
-            }
         }
     }
 
@@ -164,7 +160,6 @@ public class EldenRingHUDPlayer : MonoBehaviour
     {
         lastAttackTime = Time.time;
         currentStamina -= attackStaminaCost;
-        Debug.Log("Player swings weapon!");
 
         Vector3 hitBoxCenter = transform.position + transform.forward * attackRange + Vector3.up * 1f;
         Collider[] hitEnemies = Physics.OverlapSphere(hitBoxCenter, attackRadius);
@@ -173,22 +168,13 @@ public class EldenRingHUDPlayer : MonoBehaviour
         {
             if (col.CompareTag("Enemy"))
             {
-                Debug.Log("Hit enemy: " + col.name);
-                Renderer enemyRenderer = col.GetComponent<Renderer>();
-                if (enemyRenderer != null)
+                BossController boss = col.GetComponent<BossController>();
+                if (boss != null)
                 {
-                    StartCoroutine(FlashEnemyRed(enemyRenderer));
+                    boss.TakeDamage(attackDamage);
                 }
             }
         }
-    }
-
-    System.Collections.IEnumerator FlashEnemyRed(Renderer rend)
-    {
-        Color originalColor = rend.material.color;
-        rend.material.color = Color.red;
-        yield return new WaitForSeconds(0.2f);
-        rend.material.color = originalColor;
     }
 
     void FindNearestEnemy()
@@ -211,7 +197,6 @@ public class EldenRingHUDPlayer : MonoBehaviour
         {
             currentTarget = nearestEnemy;
             isLockedOn = true;
-            Debug.Log("Locked onto: " + currentTarget.name);
         }
     }
 
@@ -219,7 +204,6 @@ public class EldenRingHUDPlayer : MonoBehaviour
     {
         isLockedOn = false;
         currentTarget = null;
-        Debug.Log("Target unlocked.");
     }
 
     void StartRoll(Vector3 inputDir)

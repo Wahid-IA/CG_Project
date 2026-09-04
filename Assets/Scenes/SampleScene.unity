@@ -656,7 +656,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 60, y: 60, z: 60}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -677,7 +677,7 @@ GameObject:
   - component: {fileID: 797540245}
   m_Layer: 0
   m_Name: Capsule
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -799,9 +799,7 @@ MonoBehaviour:
   attackCooldown: 0.8
   attackRange: 2.2
   attackRadius: 1.2
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 0
+  lockRange: 15
   gravity: -9.81
 --- !u!1 &832575517
 GameObject:
@@ -939,8 +937,9 @@ GameObject:
   - component: {fileID: 1719765474}
   - component: {fileID: 1719765473}
   - component: {fileID: 1719765472}
+  - component: {fileID: 1719765476}
   m_Layer: 0
-  m_Name: EnemyDummy
+  m_Name: Boss_Root
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1035,12 +1034,32 @@ Transform:
   m_GameObject: {fileID: 1719765471}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 3}
+  m_LocalPosition: {x: 0, y: 1, z: 30}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1719765476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1719765471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5508113fac379541a32b426826f6c47, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossController
+  maxHealth: 300
+  currentHealth: 0
+  moveSpeed: 3.5
+  rotationSpeed: 8
+  aggroRange: 12
+  attackRange: 2.5
+  attackCooldown: 2
+  bossRenderer: {fileID: 0}
 --- !u!1 &1833444849
 GameObject:
   m_ObjectHideFlags: 0
