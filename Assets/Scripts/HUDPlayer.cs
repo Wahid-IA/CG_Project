@@ -50,14 +50,13 @@ public class HUDPlayer : MonoBehaviour
     public float gravity = -9.81f;
     private Vector3 velocity;
 
-    void Start()
+   void Start()
     {
         controller = GetComponent<CharacterController>();
         camTransform = Camera.main != null ? Camera.main.transform : transform;
         currentHealth = maxHealth;
         currentStamina = maxStamina;
     }
-
     void Update()
     {
         HandleStamina();
