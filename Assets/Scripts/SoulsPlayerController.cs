@@ -5,6 +5,7 @@ public class SoulsPlayerController : MonoBehaviour
 {
     private CharacterController controller;
     private Transform camTransform;
+    private Animator animator;
 
     [Header("Movement Settings")]
     public float walkSpeed = 5f;
@@ -12,12 +13,21 @@ public class SoulsPlayerController : MonoBehaviour
     public float rotationSpeed = 15f;
     private float currentSpeed;
 
+    [Header("Animation Settings")]
+    [Tooltip("Time in seconds to smoothly damp between animation states (Idle, Walk, Sprint)")]
+    public float speedDampTime = 0.15f;
+
     [Header("Stamina System")]
     public float maxStamina = 100f;
     public float currentStamina;
     public float staminaRegenRate = 30f;
     public float rollStaminaCost = 25f;
     public float sprintStaminaCost = 20f;
+    public float attackStaminaCost = 15f;
+
+    [Header("Combat Settings")]
+    public float attackCooldown = 0.8f;
+    private float lastAttackTime = 0f;
 
     [Header("Dodge Roll Settings")]
     public float rollSpeed = 14f;
@@ -34,6 +44,9 @@ public class SoulsPlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         
+        // Searches root and child GameObjects for the Animator component
+        animator = GetComponentInChildren<Animator>();
+
         if (Camera.main != null)
         {
             camTransform = Camera.main.transform;
@@ -56,7 +69,23 @@ public class SoulsPlayerController : MonoBehaviour
             return;
         }
 
+        HandleCombat();
         HandleMovement();
+    }
+
+    void HandleCombat()
+    {
+        // Trigger attack on Left Mouse Click if off cooldown and stamina is available
+        if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown && currentStamina >= attackStaminaCost)
+        {
+            lastAttackTime = Time.time;
+            currentStamina -= attackStaminaCost;
+
+            if (animator != null)
+            {
+                animator.SetTrigger("Attack");
+            }
+        }
     }
 
     void HandleMovement()
@@ -72,17 +101,28 @@ public class SoulsPlayerController : MonoBehaviour
         {
             currentSpeed = runSpeed;
             currentStamina -= sprintStaminaCost * Time.deltaTime;
-            // Debug.Log("Sprinting! Stamina: " + currentStamina);
         }
         else
         {
             currentSpeed = walkSpeed;
         }
 
+        // Calculate Target Animation Speed (Idle = 0.0, Walk = 0.3, Sprint = 1.0)
+        float animSpeedTarget = 0f;
+        if (direction.magnitude >= 0.1f)
+        {
+            animSpeedTarget = isSprinting ? 1.0f : 0.3f;
+        }
+
+        // Smoothly update the Animator Speed parameter
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", animSpeedTarget, speedDampTime, Time.deltaTime);
+        }
+
         // Dodge roll input (Spacebar)
         if (Input.GetKeyDown(KeyCode.Space) && currentStamina >= rollStaminaCost)
         {
-            // If standing still, roll forward based on camera or player facing direction
             Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;
             StartRoll(rollInput);
             return;
@@ -116,6 +156,12 @@ public class SoulsPlayerController : MonoBehaviour
 
         float targetAngle = Mathf.Atan2(inputDir.x, inputDir.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
         rollDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+
+        // Reset movement speed in animator during roll
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", 0f, 0.05f, Time.deltaTime);
+        }
     }
 
     void PerformRoll()
@@ -131,7 +177,6 @@ public class SoulsPlayerController : MonoBehaviour
 
     void HandleStamina()
     {
-        // Regenerate stamina if not sprinting or rolling
         if (!Input.GetKey(KeyCode.LeftShift) && !isRolling)
         {
             currentStamina = Mathf.Clamp(currentStamina + staminaRegenRate * Time.deltaTime, 0f, maxStamina);
