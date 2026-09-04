@@ -2,19 +2,23 @@ using UnityEngine;
 
 public class BossController : MonoBehaviour
 {
-    private Transform playerTransform;
+    [Header("Target")]
+    public Transform playerTransform; // Drag player here directly!
 
     [Header("Boss Stats")]
     public float maxHealth = 300f;
     public float currentHealth;
-    public float moveSpeed = 3.5f;
-    public float rotationSpeed = 8f;
+    public float moveSpeed = 4f;         
+    public float rotationSpeed = 10f;
 
-    [Header("Combat Ranges")]
-    public float aggroRange = 60f;
-    public float attackRange = 4f;
-    public float attackCooldown = 2f;
+    [Header("Combat Settings")]
+    public float attackRange = 2.5f;
+    public float attackCooldown = 1.5f;   
     private float lastAttackTime = 0f;
+    public float attackDamage = 15f;
+
+    [Header("Awakening State")]
+    public bool isAwakened = false;     
 
     [Header("Visuals")]
     public Renderer bossRenderer;
@@ -23,10 +27,11 @@ public class BossController : MonoBehaviour
     {
         currentHealth = maxHealth;
 
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-        if (playerObj != null)
+        // Fallback if player reference isn't dragged in
+        if (playerTransform == null)
         {
-            playerTransform = playerObj.transform;
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null) playerTransform = playerObj.transform;
         }
 
         if (bossRenderer == null)
@@ -37,44 +42,51 @@ public class BossController : MonoBehaviour
 
     void Update()
     {
-        if (playerTransform == null) return;
+        if (!isAwakened || playerTransform == null) return;
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
-        if (distanceToPlayer <= aggroRange)
+        // Always face the player aggressively
+        Vector3 dirToPlayer = (playerTransform.position - transform.position).normalized;
+        dirToPlayer.y = 0;
+        if (dirToPlayer != Vector3.zero)
         {
-            Vector3 dirToPlayer = (playerTransform.position - transform.position).normalized;
-            dirToPlayer.y = 0;
-            if (dirToPlayer != Vector3.zero)
-            {
-                Quaternion lookRot = Quaternion.LookRotation(dirToPlayer);
-                transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, rotationSpeed * Time.deltaTime);
-            }
-
-            if (distanceToPlayer > attackRange)
-            {
-                transform.position += dirToPlayer * moveSpeed * Time.deltaTime;
-            }
-            else if (Time.time >= lastAttackTime + attackCooldown)
-            {
-                PerformBossAttack();
-            }
+            Quaternion lookRot = Quaternion.LookRotation(dirToPlayer);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, rotationSpeed * Time.deltaTime);
         }
+
+        // Relentlessly chase or attack
+        if (distanceToPlayer > attackRange)
+        {
+            transform.position += dirToPlayer * moveSpeed * Time.deltaTime;
+        }
+        else if (Time.time >= lastAttackTime + attackCooldown)
+        {
+            PerformBossAttack();
+        }
+    }
+
+    public void WakeUpBoss()
+    {
+        isAwakened = true;
+        Debug.Log("Boss has awakened and is locked onto you!");
     }
 
     void PerformBossAttack()
     {
         lastAttackTime = Time.time;
+        Debug.Log("Boss swings continuously at the player!");
 
         HUDPlayer playerScript = playerTransform.GetComponent<HUDPlayer>();
         if (playerScript != null)
         {
-            playerScript.currentHealth -= 20f;
+            playerScript.currentHealth -= attackDamage;
         }
     }
 
     public void TakeDamage(float damageAmount)
     {
+        isAwakened = true; 
         currentHealth -= damageAmount;
 
         if (bossRenderer != null)
@@ -98,6 +110,7 @@ public class BossController : MonoBehaviour
 
     void Die()
     {
+        Debug.Log("VICTORY! Boss defeated.");
         Destroy(gameObject);
     }
 }
