@@ -20,12 +20,20 @@ public class BossController : MonoBehaviour
     [Header("Awakening State")]
     public bool isAwakened = false;     
 
+    [Header("Animation Settings")]
+    [Tooltip("Dampening time to ensure smooth blending between Idle and Walk")]
+    public float speedDampTime = 0.15f;
+    private Animator animator;
+
     [Header("Visuals")]
     public Renderer bossRenderer;
 
     void Start()
     {
         currentHealth = maxHealth;
+
+        // Automatically fetch Animator component on this GameObject or child rig
+        animator = GetComponentInChildren<Animator>();
 
         if (playerTransform == null)
         {
@@ -41,7 +49,12 @@ public class BossController : MonoBehaviour
 
     void Update()
     {
-        if (!isAwakened || playerTransform == null) return;
+        // If unawakened or missing target, force animation speed to Idle (0) smoothly
+        if (!isAwakened || playerTransform == null) 
+        {
+            UpdateAnimationSpeed(0f);
+            return;
+        }
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
@@ -53,13 +66,27 @@ public class BossController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, rotationSpeed * Time.deltaTime);
         }
 
+        float targetAnimSpeed = 0f;
+
         if (distanceToPlayer > attackRange)
         {
             transform.position += dirToPlayer * moveSpeed * Time.deltaTime;
+            targetAnimSpeed = 1f; // Triggers Walk state (> 0.1)
         }
         else if (Time.time >= lastAttackTime + attackCooldown)
         {
             PerformBossAttack();
+        }
+
+        UpdateAnimationSpeed(targetAnimSpeed);
+    }
+
+    void UpdateAnimationSpeed(float targetSpeed)
+    {
+        if (animator != null)
+        {
+            // Smoothly damp the Speed parameter over speedDampTime
+            animator.SetFloat("Speed", targetSpeed, speedDampTime, Time.deltaTime);
         }
     }
 
