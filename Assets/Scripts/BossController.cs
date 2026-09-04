@@ -23,15 +23,9 @@ public class BossController : MonoBehaviour
     [Header("Visuals")]
     public Renderer bossRenderer;
 
-    // <--- ADDED: Animator Reference
-    private Animator animator;
-
     void Start()
     {
         currentHealth = maxHealth;
-
-        // <--- ADDED: Get Animator on child model
-        animator = GetComponentInChildren<Animator>();
 
         if (playerTransform == null)
         {
@@ -47,12 +41,7 @@ public class BossController : MonoBehaviour
 
     void Update()
     {
-        // If unawakened or no player, stay in Idle
-        if (!isAwakened || playerTransform == null) 
-        {
-            if (animator != null) animator.SetFloat("Speed", 0f, 0.15f, Time.deltaTime);
-            return;
-        }
+        if (!isAwakened || playerTransform == null) return;
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
@@ -64,28 +53,13 @@ public class BossController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, rotationSpeed * Time.deltaTime);
         }
 
-        float targetAnimSpeed = 0f;
-
-        // Movement & Attack Logic
         if (distanceToPlayer > attackRange)
         {
             transform.position += dirToPlayer * moveSpeed * Time.deltaTime;
-            targetAnimSpeed = 0.5f; // <--- 0.5f = Walk (1.0f triggers Sprint)
         }
-        else
+        else if (Time.time >= lastAttackTime + attackCooldown)
         {
-            targetAnimSpeed = 0f; // <--- 0f = Idle
-
-            if (Time.time >= lastAttackTime + attackCooldown)
-            {
-                PerformBossAttack();
-            }
-        }
-
-        // Smoothly damp animation transitions over 0.15 seconds
-        if (animator != null)
-        {
-            animator.SetFloat("Speed", targetAnimSpeed, 0.15f, Time.deltaTime);
+            PerformBossAttack();
         }
     }
 
