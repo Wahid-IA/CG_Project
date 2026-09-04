@@ -97,11 +97,24 @@ public class BossController : MonoBehaviour
     void PerformBossAttack()
     {
         lastAttackTime = Time.time;
+        Debug.Log("Boss attempts an attack on player!");
 
-        HUDPlayer playerScript = playerTransform.GetComponent<HUDPlayer>();
-        if (playerScript != null)
+        if (playerTransform != null)
         {
-            playerScript.currentHealth -= attackDamage;
+            HUDPlayer playerScript = playerTransform.GetComponent<HUDPlayer>();
+            if (playerScript != null)
+            {
+                playerScript.currentHealth -= attackDamage;
+                Debug.Log("SUCCESS: Boss hit player! Player HP remaining: " + playerScript.currentHealth);
+            }
+            else
+            {
+                Debug.LogError("ERROR: HUDPlayer script not found on the player transform!");
+            }
+        }
+        else
+        {
+            Debug.LogError("ERROR: Boss has no playerTransform assigned!");
         }
     }
 
