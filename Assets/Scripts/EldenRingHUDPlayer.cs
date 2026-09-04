@@ -21,6 +21,7 @@ public class EldenRingHUDPlayer : MonoBehaviour
     public float staminaRegenRate = 35f;
     public float rollStaminaCost = 25f;
     public float sprintStaminaCost = 15f;
+    public float attackStaminaCost = 20f; // New: Stamina cost to swing weapon
 
     [Header("UI Bar References (Drag & Drop)")]
     public Image healthFillImage;
@@ -32,6 +33,13 @@ public class EldenRingHUDPlayer : MonoBehaviour
     private bool isRolling = false;
     private float rollTimer = 0f;
     private Vector3 rollDirection;
+
+    [Header("Melee Combat & Hitbox")]
+    public float attackCooldown = 0.8f;
+    private float lastAttackTime = 0f;
+    public float attackRange = 2.2f;      // Hitbox forward offset
+    public float attackRadius = 1.2f;     // Hitbox sphere size
+    public LayerMask enemyLayer;          // Layer to detect enemies
 
     [Header("Physics")]
     public float gravity = -9.81f;
@@ -56,6 +64,7 @@ public class EldenRingHUDPlayer : MonoBehaviour
             return;
         }
 
+        HandleCombat();
         HandleMovement();
     }
 
@@ -101,6 +110,57 @@ public class EldenRingHUDPlayer : MonoBehaviour
         controller.Move(velocity * Time.deltaTime);
     }
 
+    void HandleCombat()
+    {
+        // Left Mouse Click to Attack (with cooldown and stamina check)
+        if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown)
+        {
+            if (currentStamina >= attackStaminaCost)
+            {
+                PerformMeleeAttack();
+            }
+            else
+            {
+                Debug.Log("Not enough stamina to attack!");
+            }
+        }
+    }
+
+    void PerformMeleeAttack()
+    {
+        lastAttackTime = Time.time;
+        currentStamina -= attackStaminaCost;
+        Debug.Log("Player swings weapon!");
+
+        // Create a spatial hitbox check directly in front of the player
+        Vector3 hitBoxCenter = transform.position + transform.forward * attackRange + Vector3.up * 1f;
+        Collider[] hitEnemies = Physics.OverlapSphere(hitBoxCenter, attackRadius);
+
+        foreach (Collider col in hitEnemies)
+        {
+            // Check if the hit object has the "Enemy" tag
+            if (col.CompareTag("Enemy"))
+            {
+                Debug.Log("Hit enemy: " + col.name);
+                
+                // Visual feedback: make the enemy flash red temporarily
+                Renderer enemyRenderer = col.GetComponent<Renderer>();
+                if (enemyRenderer != null)
+                {
+                    StartCoroutine(FlashEnemyRed(enemyRenderer));
+                }
+            }
+        }
+    }
+
+    System.Collections.IEnumerator FlashEnemyRed(Renderer rend)
+    {
+        Color originalColor = rend.material.color;
+        rend.material.color = Color.red;
+        yield return new WaitForSeconds(0.2f);
+        rend.material.color = originalColor;
+    }
+
     void StartRoll(Vector3 inputDir)
     {
         isRolling = true;
@@ -133,5 +193,13 @@ public class EldenRingHUDPlayer : MonoBehaviour
 
         if (staminaFillImage != null)
             staminaFillImage.fillAmount = Mathf.Lerp(staminaFillImage.fillAmount, currentStamina / maxStamina, Time.deltaTime * 15f);
+    }
+
+    // Optional: Draw the attack hitbox sphere in the Scene view so you can see its range
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.yellow;
+        Vector3 hitBoxCenter = transform.position + transform.forward * attackRange + Vector3.up * 1f;
+        Gizmos.DrawWireSphere(hitBoxCenter, attackRadius);
     }
 }
