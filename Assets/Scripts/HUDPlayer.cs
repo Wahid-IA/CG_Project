@@ -63,14 +63,12 @@ public class HUDPlayer : MonoBehaviour
         HandleStamina();
         UpdateUI();
 
-        // Target Lock toggle with Q
         if (Input.GetKeyDown(KeyCode.Q))
         {
             if (isLockedOn) UnlockTarget();
             else FindNearestEnemy();
         }
 
-        // Maintain Target Lock rotation
         if (isLockedOn && currentTarget != null)
         {
             if (Vector3.Distance(transform.position, currentTarget.position) > lockRange)
@@ -117,7 +115,6 @@ public class HUDPlayer : MonoBehaviour
             currentSpeed = walkSpeed;
         }
 
-        // Spacebar Dodge Roll
         if (Input.GetKeyDown(KeyCode.Space) && currentStamina >= rollStaminaCost)
         {
             Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;
@@ -139,7 +136,6 @@ public class HUDPlayer : MonoBehaviour
             controller.Move(moveDir.normalized * currentSpeed * Time.deltaTime);
         }
 
-        // Gravity
         if (controller.isGrounded && velocity.y < 0) velocity.y = -2f;
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
@@ -168,7 +164,7 @@ public class HUDPlayer : MonoBehaviour
         {
             if (col.CompareTag("Enemy"))
             {
-                BossController boss = col.GetComponent<BossController>();
+                BossController boss = col.GetComponentInParent<BossController>();
                 if (boss != null)
                 {
                     boss.TakeDamage(attackDamage);

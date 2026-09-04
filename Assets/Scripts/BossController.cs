@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class BossController : MonoBehaviour
 {
-    [Header("Target")]
-    public Transform playerTransform; // Drag player here directly!
+    [Header("Target Reference")]
+    public Transform playerTransform;
 
     [Header("Boss Stats")]
     public float maxHealth = 300f;
@@ -27,7 +27,6 @@ public class BossController : MonoBehaviour
     {
         currentHealth = maxHealth;
 
-        // Fallback if player reference isn't dragged in
         if (playerTransform == null)
         {
             GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
@@ -46,7 +45,6 @@ public class BossController : MonoBehaviour
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
-        // Always face the player aggressively
         Vector3 dirToPlayer = (playerTransform.position - transform.position).normalized;
         dirToPlayer.y = 0;
         if (dirToPlayer != Vector3.zero)
@@ -55,7 +53,6 @@ public class BossController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, rotationSpeed * Time.deltaTime);
         }
 
-        // Relentlessly chase or attack
         if (distanceToPlayer > attackRange)
         {
             transform.position += dirToPlayer * moveSpeed * Time.deltaTime;
@@ -69,13 +66,11 @@ public class BossController : MonoBehaviour
     public void WakeUpBoss()
     {
         isAwakened = true;
-        Debug.Log("Boss has awakened and is locked onto you!");
     }
 
     void PerformBossAttack()
     {
         lastAttackTime = Time.time;
-        Debug.Log("Boss swings continuously at the player!");
 
         HUDPlayer playerScript = playerTransform.GetComponent<HUDPlayer>();
         if (playerScript != null)
@@ -110,7 +105,6 @@ public class BossController : MonoBehaviour
 
     void Die()
     {
-        Debug.Log("VICTORY! Boss defeated.");
         Destroy(gameObject);
     }
 }

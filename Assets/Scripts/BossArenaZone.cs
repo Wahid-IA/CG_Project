@@ -9,19 +9,22 @@ public class BossArenaZone : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        Debug.Log("Something entered the trigger: " + other.name + " with tag: " + other.tag);
+
         // Check if it's the player entering the arena for the first time
         if (!hasTriggered && other.CompareTag("Player"))
         {
             hasTriggered = true;
-            Debug.Log("Entered Boss Arena! The battle begins.");
+            Debug.Log("SUCCESS: Player crossed the threshold! Waking up the boss.");
 
-            // Activate the boss and let it know the fight has started
             if (bossController != null)
             {
                 bossController.WakeUpBoss();
             }
-
-            // Optional: You can spawn a visual "Fog Wall" barrier behind the player here
+            else
+            {
+                Debug.LogError("ERROR: Boss Controller reference is missing on the BossArenaTrigger!");
+            }
         }
     }
 }
