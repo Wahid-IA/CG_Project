@@ -5,7 +5,8 @@ public class BossHealthBarUI : MonoBehaviour
 {
     [Header("UI References")]
     public GameObject healthBarContainer; 
-    public Image bossBarFill;             
+    public Image bossBarFill; 
+    public Image bossStaggerBarFill; 
     public BossController bossController; 
 
     private bool isBarActive = false;
@@ -30,7 +31,7 @@ public class BossHealthBarUI : MonoBehaviour
             return;
         }
 
-        if (bossBarFill == null || healthBarContainer == null) return;
+        if (healthBarContainer == null) return;
 
         // Show bar when boss wakes up
         if (bossController.isAwakened && !isBarActive && !bossController.isDead)
@@ -39,11 +40,22 @@ public class BossHealthBarUI : MonoBehaviour
             healthBarContainer.SetActive(true);
         }
 
-        // Smoothly update fill amount based on boss health
+        // Smoothly update fill amounts based on boss health and stagger
         if (isBarActive)
         {
-            float healthPercentage = Mathf.Clamp01(bossController.currentHealth / bossController.maxHealth);
-            bossBarFill.fillAmount = Mathf.Lerp(bossBarFill.fillAmount, healthPercentage, Time.deltaTime * 10f);
+            // Health Fill
+            if (bossBarFill != null)
+            {
+                float healthPercentage = Mathf.Clamp01(bossController.currentHealth / bossController.maxHealth);
+                bossBarFill.fillAmount = Mathf.Lerp(bossBarFill.fillAmount, healthPercentage, Time.deltaTime * 10f);
+            }
+
+            // Stagger Fill
+            if (bossStaggerBarFill != null)
+            {
+                float staggerPercentage = Mathf.Clamp01(bossController.currentStagger / bossController.maxStagger);
+                bossStaggerBarFill.fillAmount = Mathf.Lerp(bossStaggerBarFill.fillAmount, staggerPercentage, Time.deltaTime * 10f);
+            }
 
             // Hide when boss dies or health drops to 0
             if (bossController.currentHealth <= 0 || bossController.isDead)

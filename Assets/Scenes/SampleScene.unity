@@ -240,6 +240,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BossHealthBarUI
   healthBarContainer: {fileID: 1371322428}
   bossBarFill: {fileID: 28526747}
+  bossStaggerBarFill: {fileID: 1474129149}
   bossController: {fileID: 1719765476}
 --- !u!4 &61373956 stripped
 Transform:
@@ -850,8 +851,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoulsCombatSystem
   lockRange: 15
-  attackRange: 2.5
   attackCooldown: 0.8
+  attackRange: 2.5
+  attackRadius: 1.2
+  attackDamage: 25
+  attackStaminaCost: 20
+  parryStaminaCost: 15
+  parryStartup: 0.05
+  parryWindow: 0.25
+  parryRecovery: 0.35
 --- !u!114 &797540243
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -868,15 +876,11 @@ MonoBehaviour:
   runSpeed: 9
   rotationSpeed: 15
   speedDampTime: 0.15
-  maxStamina: 100
-  currentStamina: 0
-  staminaRegenRate: 30
-  rollStaminaCost: 25
-  sprintStaminaCost: 20
-  attackStaminaCost: 15
-  attackCooldown: 0.8
   rollSpeed: 14
   rollDuration: 0.35
+  iFrameDuration: 0.35
+  rollStaminaCost: 25
+  sprintStaminaCost: 20
   gravity: -9.81
 --- !u!143 &797540244
 CharacterController:
@@ -915,27 +919,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88864143232bad6428f253c0f128dd5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EldenRingHUDPlayer
-  walkSpeed: 4
-  runSpeed: 7.5
-  rotationSpeed: 12
   maxHealth: 100
   currentHealth: 0
+  healthFillImage: {fileID: 1903849077}
   maxStamina: 100
   currentStamina: 0
   staminaRegenRate: 35
-  rollStaminaCost: 25
-  sprintStaminaCost: 15
-  attackStaminaCost: 20
-  healthFillImage: {fileID: 1903849077}
   staminaFillImage: {fileID: 904260011}
-  rollSpeed: 13
-  rollDuration: 0.35
-  attackCooldown: 0.8
-  attackRange: 2.2
-  attackRadius: 1.2
-  attackDamage: 25
-  lockRange: 15
-  gravity: -9.81
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -1091,6 +1081,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 28526746}
+  - {fileID: 1474129148}
   m_Father: {fileID: 519068618}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
@@ -1135,6 +1126,81 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1371322428}
+  m_CullTransparentMesh: 1
+--- !u!1 &1474129147
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1474129148}
+  - component: {fileID: 1474129150}
+  - component: {fileID: 1474129149}
+  m_Layer: 5
+  m_Name: BossStaggerBar_fill
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1474129148
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1474129147}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1371322429}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 400, y: 20}
+  m_SizeDelta: {x: 800, y: 20}
+  m_Pivot: {x: 1, y: 0}
+--- !u!114 &1474129149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1474129147}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 0.8110068, b: 0, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 3
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 0
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1474129150
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1474129147}
   m_CullTransparentMesh: 1
 --- !u!1001 &1576942128
 PrefabInstance:
@@ -1316,6 +1382,11 @@ MonoBehaviour:
   attackRange: 2.5
   attackCooldown: 2
   attackDamage: 15
+  maxStagger: 100
+  currentStagger: 0
+  defaultStaggerPerHit: 25
+  staggerDecayRate: 5
+  staggerDuration: 2.5
   isAwakened: 0
   speedDampTime: 0.15
   bossRenderer: {fileID: 0}

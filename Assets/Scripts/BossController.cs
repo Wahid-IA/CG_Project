@@ -19,8 +19,12 @@ public class BossController : MonoBehaviour
     private float lastAttackTime = 0f;
     public float attackDamage = 15f;
 
-    [Header("Stagger State")]
-    public float staggerDuration = 2.5f;
+    [Header("Stagger System")]
+    public float maxStagger = 100f;
+    public float currentStagger = 0f;
+    public float defaultStaggerPerHit = 25f;
+    public float staggerDecayRate = 5f; // Drains stagger slowly if player stops attacking
+    public float staggerDuration = 3f;  // Stun length in seconds
     public bool isStaggered { get; private set; } = false;
     private float staggerTimer = 0f;
 
@@ -28,7 +32,6 @@ public class BossController : MonoBehaviour
     public bool isAwakened = false;     
 
     [Header("Animation Settings")]
-    [Tooltip("Dampening time to ensure smooth blending between Idle and Walk")]
     public float speedDampTime = 0.15f;
     private Animator animator;
 
@@ -59,29 +62,39 @@ public class BossController : MonoBehaviour
 
     void Update()
     {
-        // Stop movement and attack logic if boss is dead
         if (isDead) return;
 
-        // Handle Stagger State from Parry
+        // Handle Staggered/Stunned State (Disables movement & attacks)
         if (isStaggered)
         {
             staggerTimer -= Time.deltaTime;
-            UpdateAnimationSpeed(0f); // Freeze boss in place while staggered
+            UpdateAnimationSpeed(0f); // Freeze movement during stagger
 
             if (staggerTimer <= 0f)
             {
                 isStaggered = false;
+                currentStagger = 0f; // Reset meter after recovery
+
+                // Stop playing looping stagger animation
+                if (animator != null)
+                {
+                    animator.SetBool("IsStagger", false); // Matched to 'IsStagger'
+                }
             }
-            return; // Prevent movement and attacks while staggered
+            return; // Block AI movement and attacks while staggered
         }
 
-        // Ensure player script reference is cached
+        // Slowly decay stagger meter if player stops attacking
+        if (currentStagger > 0f)
+        {
+            currentStagger = Mathf.Clamp(currentStagger - staggerDecayRate * Time.deltaTime, 0f, maxStagger);
+        }
+
         if (playerScript == null && playerTransform != null)
         {
             playerScript = playerTransform.GetComponent<HUDPlayer>();
         }
 
-        // Stop pursuit and return to Idle if unawakened, missing target, or player is dead
         if (!isAwakened || playerTransform == null || (playerScript != null && playerScript.isDead)) 
         {
             UpdateAnimationSpeed(0f);
@@ -103,7 +116,7 @@ public class BossController : MonoBehaviour
         if (distanceToPlayer > attackRange)
         {
             transform.position += dirToPlayer * moveSpeed * Time.deltaTime;
-            targetAnimSpeed = 1f; // Triggers Walk state (> 0.1)
+            targetAnimSpeed = 1f;
         }
         else if (Time.time >= lastAttackTime + attackCooldown)
         {
@@ -111,6 +124,82 @@ public class BossController : MonoBehaviour
         }
 
         UpdateAnimationSpeed(targetAnimSpeed);
+    }
+
+    public void AddStagger(float amount)
+    {
+        if (isDead || isStaggered) return;
+
+        currentStagger = Mathf.Clamp(currentStagger + amount, 0f, maxStagger);
+
+        if (currentStagger >= maxStagger)
+        {
+            TriggerStagger();
+        }
+    }
+
+    private void TriggerStagger()
+    {
+        isStaggered = true;
+        staggerTimer = staggerDuration;
+
+        // Start playing looping stagger animation
+        if (animator != null)
+        {
+            animator.SetBool("IsStagger", true); // Matched to 'IsStagger'
+        }
+
+        Debug.Log("Boss staggered!");
+    }
+
+    public void GetParried()
+    {
+        if (isDead) return;
+
+        // Parrying fills 50% of the stagger meter instantly
+        AddStagger(maxStagger * 0.5f);
+    }
+
+    public void TakeDamage(float damageAmount)
+    {
+        TakeDamage(damageAmount, defaultStaggerPerHit);
+    }
+
+    public void TakeDamage(float damageAmount, float customStaggerAmount)
+    {
+        if (isDead) return;
+
+        isAwakened = true; 
+        currentHealth -= damageAmount;
+
+        AddStagger(customStaggerAmount);
+
+        if (bossRenderer != null)
+        {
+            StartCoroutine(FlashColor());
+        }
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    void PerformBossAttack()
+    {
+        if (playerScript != null && playerScript.isDead) return;
+
+        lastAttackTime = Time.time;
+
+        if (animator != null)
+        {
+            animator.SetTrigger("Attack");
+        }
+
+        if (playerScript != null)
+        {
+            playerScript.TakeDamage(attackDamage, gameObject);
+        }
     }
 
     void UpdateAnimationSpeed(float targetSpeed)
@@ -127,57 +216,6 @@ public class BossController : MonoBehaviour
         isAwakened = true;
     }
 
-    void PerformBossAttack()
-    {
-        if (playerScript != null && playerScript.isDead) return;
-
-        lastAttackTime = Time.time;
-
-        if (animator != null)
-        {
-            animator.SetTrigger("Attack");
-        }
-
-        if (playerScript != null)
-        {
-            // Pass 'gameObject' so HUDPlayer knows who attacked
-            playerScript.TakeDamage(attackDamage, gameObject);
-        }
-    }
-
-    public void GetParried()
-    {
-        if (isDead) return;
-
-        isStaggered = true;
-        staggerTimer = staggerDuration;
-
-        if (animator != null)
-        {
-            animator.SetTrigger("Stagger");
-        }
-
-        Debug.Log("Boss was parried and staggered!");
-    }
-
-    public void TakeDamage(float damageAmount)
-    {
-        if (isDead) return;
-
-        isAwakened = true; 
-        currentHealth -= damageAmount;
-
-        if (bossRenderer != null)
-        {
-            StartCoroutine(FlashColor());
-        }
-
-        if (currentHealth <= 0)
-        {
-            Die();
-        }
-    }
-
     System.Collections.IEnumerator FlashColor()
     {
         Color orig = bossRenderer.material.color;
@@ -190,20 +228,18 @@ public class BossController : MonoBehaviour
     {
         isDead = true;
 
-        // Trigger death animation
         if (animator != null)
         {
+            animator.SetBool("IsStagger", false); // Matched to 'IsStagger'
             animator.SetTrigger("Die");
         }
 
-        // Disable colliders so player doesn't get blocked by the falling body
         Collider[] colliders = GetComponentsInChildren<Collider>();
         foreach (Collider col in colliders)
         {
             col.enabled = false;
         }
 
-        // Destroy boss GameObject after 3 seconds to allow death animation to finish playing
         Destroy(gameObject, 3f);
     }
 }
