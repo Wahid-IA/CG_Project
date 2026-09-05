@@ -4,6 +4,7 @@ public class BossController : MonoBehaviour
 {
     [Header("Target Reference")]
     public Transform playerTransform;
+    private HUDPlayer playerScript;
 
     [Header("Boss Stats")]
     public float maxHealth = 300f;
@@ -40,6 +41,11 @@ public class BossController : MonoBehaviour
             if (playerObj != null) playerTransform = playerObj.transform;
         }
 
+        if (playerTransform != null)
+        {
+            playerScript = playerTransform.GetComponent<HUDPlayer>();
+        }
+
         if (bossRenderer == null)
         {
             bossRenderer = GetComponentInChildren<Renderer>();
@@ -51,8 +57,14 @@ public class BossController : MonoBehaviour
         // Stop movement and attack logic if boss is dead
         if (isDead) return;
 
-        // If unawakened or missing target, force animation speed to Idle (0) smoothly
-        if (!isAwakened || playerTransform == null) 
+        // Ensure player script reference is cached
+        if (playerScript == null && playerTransform != null)
+        {
+            playerScript = playerTransform.GetComponent<HUDPlayer>();
+        }
+
+        // Stop pursuit and return to Idle if unawakened, missing target, or player is dead
+        if (!isAwakened || playerTransform == null || (playerScript != null && playerScript.isDead)) 
         {
             UpdateAnimationSpeed(0f);
             return;
@@ -99,6 +111,8 @@ public class BossController : MonoBehaviour
 
     void PerformBossAttack()
     {
+        if (playerScript != null && playerScript.isDead) return;
+
         lastAttackTime = Time.time;
 
         // Trigger boss attack animation
@@ -107,13 +121,9 @@ public class BossController : MonoBehaviour
             animator.SetTrigger("Attack");
         }
 
-        if (playerTransform != null)
+        if (playerScript != null)
         {
-            HUDPlayer playerScript = playerTransform.GetComponent<HUDPlayer>();
-            if (playerScript != null)
-            {
-                playerScript.TakeDamage(attackDamage);
-            }
+            playerScript.TakeDamage(attackDamage);
         }
     }
 

@@ -1,38 +1,28 @@
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(HUDPlayer))]
 public class SoulsPlayerController : MonoBehaviour
 {
     private CharacterController controller;
     private Transform camTransform;
     private Animator animator;
+    private HUDPlayer hudPlayer;
 
-    [Header("Movement Settings")]
-    public float walkSpeed = 5f;
-    public float runSpeed = 9f;
-    public float rotationSpeed = 15f;
+    [Header("Movement Stats")]
+    public float walkSpeed = 4f;
+    public float runSpeed = 7.5f;
+    public float rotationSpeed = 12f;
+    public float speedDampTime = 0.15f;
     private float currentSpeed;
 
-    [Header("Animation Settings")]
-    [Tooltip("Time in seconds to smoothly damp between animation states (Idle, Walk, Sprint)")]
-    public float speedDampTime = 0.15f;
-
-    [Header("Stamina System")]
-    public float maxStamina = 100f;
-    public float currentStamina;
-    public float staminaRegenRate = 30f;
-    public float rollStaminaCost = 25f;
-    public float sprintStaminaCost = 20f;
-    public float attackStaminaCost = 15f;
-
-    [Header("Combat Settings")]
-    public float attackCooldown = 0.8f;
-    private float lastAttackTime = 0f;
-
     [Header("Dodge Roll Settings")]
-    public float rollSpeed = 14f;
-    public float rollDuration = 0.35f;
-    private bool isRolling = false;
+    public float rollSpeed = 8.25f;
+    public float rollDuration = 0.55f;
+    public float rollStaminaCost = 25f;
+    public float sprintStaminaCost = 15f;
+
+    public bool isRolling { get; private set; } = false;
     private float rollTimer = 0f;
     private Vector3 rollDirection;
 
@@ -44,22 +34,16 @@ public class SoulsPlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
-
-        if (Camera.main != null)
-        {
-            camTransform = Camera.main.transform;
-        }
-        else
-        {
-            camTransform = transform;
-        }
-
-        currentStamina = maxStamina;
+        hudPlayer = GetComponent<HUDPlayer>();
+        camTransform = Camera.main != null ? Camera.main.transform : transform;
     }
 
     void Update()
     {
-        HandleStamina();
+        if (hudPlayer.isDead) return;
+
+        bool isSprintingInput = Input.GetKey(KeyCode.LeftShift);
+        hudPlayer.RegenStamina(isSprintingInput || isRolling);
 
         if (isRolling)
         {
@@ -67,22 +51,7 @@ public class SoulsPlayerController : MonoBehaviour
             return;
         }
 
-        HandleCombat();
         HandleMovement();
-    }
-
-    void HandleCombat()
-    {
-        if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown && currentStamina >= attackStaminaCost)
-        {
-            lastAttackTime = Time.time;
-            currentStamina -= attackStaminaCost;
-
-            if (animator != null)
-            {
-                animator.SetTrigger("Attack");
-            }
-        }
     }
 
     void HandleMovement()
@@ -91,30 +60,25 @@ public class SoulsPlayerController : MonoBehaviour
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
 
-        bool isSprinting = Input.GetKey(KeyCode.LeftShift) && direction.magnitude > 0 && currentStamina > 5f;
+        bool isSprinting = Input.GetKey(KeyCode.LeftShift) && direction.magnitude > 0 && hudPlayer.HasStamina(2f);
 
         if (isSprinting)
         {
             currentSpeed = runSpeed;
-            currentStamina -= sprintStaminaCost * Time.deltaTime;
+            hudPlayer.ConsumeStamina(sprintStaminaCost * Time.deltaTime);
         }
         else
         {
             currentSpeed = walkSpeed;
         }
 
-        float animSpeedTarget = 0f;
-        if (direction.magnitude >= 0.1f)
-        {
-            animSpeedTarget = isSprinting ? 1.0f : 0.3f;
-        }
-
+        float animSpeedTarget = direction.magnitude >= 0.1f ? (isSprinting ? 1.0f : 0.3f) : 0f;
         if (animator != null)
         {
             animator.SetFloat("Speed", animSpeedTarget, speedDampTime, Time.deltaTime);
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && currentStamina >= rollStaminaCost)
+        if (Input.GetKeyDown(KeyCode.Space) && hudPlayer.HasStamina(rollStaminaCost))
         {
             Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;
             StartRoll(rollInput);
@@ -123,27 +87,30 @@ public class SoulsPlayerController : MonoBehaviour
 
         if (direction.magnitude >= 0.1f)
         {
-            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
-            float angle = Mathf.LerpAngle(transform.eulerAngles.y, targetAngle, rotationSpeed * Time.deltaTime);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            Vector3 moveDir = Quaternion.Euler(0f, camTransform.eulerAngles.y, 0f) * direction;
 
-            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+            SoulsCombatSystem combat = GetComponent<SoulsCombatSystem>();
+            if (combat == null || !combat.isLockedOn)
+            {
+                float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
+                float angle = Mathf.LerpAngle(transform.eulerAngles.y, targetAngle, rotationSpeed * Time.deltaTime);
+                transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            }
+
             controller.Move(moveDir.normalized * currentSpeed * Time.deltaTime);
         }
 
-        if (controller.isGrounded && velocity.y < 0)
-        {
-            velocity.y = -2f;
-        }
+        if (controller.isGrounded && velocity.y < 0) velocity.y = -2f;
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
 
     void StartRoll(Vector3 inputDir)
     {
+        if (!hudPlayer.ConsumeStamina(rollStaminaCost)) return;
+
         isRolling = true;
         rollTimer = rollDuration;
-        currentStamina -= rollStaminaCost;
 
         float targetAngle = Mathf.Atan2(inputDir.x, inputDir.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
         rollDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
@@ -158,19 +125,11 @@ public class SoulsPlayerController : MonoBehaviour
     void PerformRoll()
     {
         rollTimer -= Time.deltaTime;
-        controller.Move(rollDirection * rollSpeed * Time.deltaTime);
+        float progress = 1f - Mathf.Clamp01(rollTimer / rollDuration);
+        float currentRollSpeed = rollSpeed * Mathf.Sin(progress * Mathf.PI);
 
-        if (rollTimer <= 0f)
-        {
-            isRolling = false;
-        }
-    }
+        controller.Move(rollDirection * currentRollSpeed * Time.deltaTime);
 
-    void HandleStamina()
-    {
-        if (!Input.GetKey(KeyCode.LeftShift) && !isRolling)
-        {
-            currentStamina = Mathf.Clamp(currentStamina + staminaRegenRate * Time.deltaTime, 0f, maxStamina);
-        }
+        if (rollTimer <= 0f) isRolling = false;
     }
 }

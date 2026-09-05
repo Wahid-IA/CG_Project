@@ -1,33 +1,51 @@
 using UnityEngine;
 
+[RequireComponent(typeof(HUDPlayer))]
 public class SoulsCombatSystem : MonoBehaviour
 {
-    [Header("Target Lock Settings")]
-    public float lockRange = 15f;
-    private Transform currentTarget;
-    private bool isLockedOn = false;
+    private HUDPlayer hudPlayer;
+    private Animator animator;
+    private SoulsPlayerController movementController;
 
-    [Header("Combat Settings")]
-    public float attackRange = 2.5f;
+    [Header("Target Lock")]
+    public float lockRange = 15f;
+    public Transform currentTarget { get; private set; }
+    public bool isLockedOn { get; private set; } = false;
+
+    [Header("Melee Combat")]
     public float attackCooldown = 0.8f;
     private float lastAttackTime = 0f;
+    public float attackRange = 2.2f;
+    public float attackRadius = 1.2f;
+    public float attackDamage = 25f;
+    public float attackStaminaCost = 20f;
+
+    void Start()
+    {
+        hudPlayer = GetComponent<HUDPlayer>();
+        animator = GetComponentInChildren<Animator>();
+        movementController = GetComponent<SoulsPlayerController>();
+    }
 
     void Update()
     {
-        // Toggle Target Lock with 'Q' key
+        if (hudPlayer.isDead) return;
+
+        HandleTargetLock();
+
+        if (movementController != null && movementController.isRolling) return;
+
+        HandleCombat();
+    }
+
+    void HandleTargetLock()
+    {
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            if (isLockedOn)
-            {
-                UnlockTarget();
-            }
-            else
-            {
-                FindNearestEnemy();
-            }
+            if (isLockedOn) UnlockTarget();
+            else FindNearestEnemy();
         }
 
-        // Maintain Lock-on rotation if active
         if (isLockedOn && currentTarget != null)
         {
             if (Vector3.Distance(transform.position, currentTarget.position) > lockRange)
@@ -37,19 +55,51 @@ public class SoulsCombatSystem : MonoBehaviour
             else
             {
                 Vector3 dirToTarget = (currentTarget.position - transform.position).normalized;
-                dirToTarget.y = 0; 
+                dirToTarget.y = 0;
                 if (dirToTarget != Vector3.zero)
                 {
                     Quaternion lookRot = Quaternion.LookRotation(dirToTarget);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, Time.deltaTime * 10f);
+                    transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, Time.deltaTime * 15f);
                 }
             }
         }
+    }
 
-        // Melee Attack Input (Left Mouse Click)
+    void HandleCombat()
+    {
         if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown)
         {
-            PerformAttack();
+            if (hudPlayer.HasStamina(attackStaminaCost))
+            {
+                PerformMeleeAttack();
+            }
+        }
+    }
+
+    void PerformMeleeAttack()
+    {
+        if (!hudPlayer.ConsumeStamina(attackStaminaCost)) return;
+
+        lastAttackTime = Time.time;
+
+        if (animator != null)
+        {
+            animator.SetTrigger("Attack");
+        }
+
+        Vector3 hitBoxCenter = transform.position + transform.forward * attackRange + Vector3.up * 1f;
+        Collider[] hitEnemies = Physics.OverlapSphere(hitBoxCenter, attackRadius);
+
+        foreach (Collider col in hitEnemies)
+        {
+            if (col.CompareTag("Enemy"))
+            {
+                BossController boss = col.GetComponentInParent<BossController>();
+                if (boss != null)
+                {
+                    boss.TakeDamage(attackDamage);
+                }
+            }
         }
     }
 
@@ -61,10 +111,10 @@ public class SoulsCombatSystem : MonoBehaviour
 
         foreach (GameObject enemy in enemies)
         {
-            float distanceToEnemy = Vector3.Distance(transform.position, enemy.transform.position);
-            if (distanceToEnemy < shortestDistance && distanceToEnemy <= lockRange)
+            float dist = Vector3.Distance(transform.position, enemy.transform.position);
+            if (dist < shortestDistance && dist <= lockRange)
             {
-                shortestDistance = distanceToEnemy;
+                shortestDistance = dist;
                 nearestEnemy = enemy.transform;
             }
         }
@@ -73,7 +123,6 @@ public class SoulsCombatSystem : MonoBehaviour
         {
             currentTarget = nearestEnemy;
             isLockedOn = true;
-            Debug.Log("Locked onto target: " + currentTarget.name);
         }
     }
 
@@ -81,30 +130,5 @@ public class SoulsCombatSystem : MonoBehaviour
     {
         isLockedOn = false;
         currentTarget = null;
-        Debug.Log("Target unlocked.");
-    }
-
-    void PerformAttack()
-    {
-        lastAttackTime = Time.time;
-        Debug.Log("Player Swings Weapon!");
-
-        if (currentTarget != null && Vector3.Distance(transform.position, currentTarget.position) <= attackRange)
-        {
-            Debug.Log("Hit Enemy Dummy!");
-            Renderer enemyRenderer = currentTarget.GetComponent<Renderer>();
-            if (enemyRenderer != null)
-            {
-                StartCoroutine(FlashRed(enemyRenderer));
-            }
-        }
-    }
-
-    System.Collections.IEnumerator FlashRed(Renderer rend)
-    {
-        Color originalColor = rend.material.color;
-        rend.material.color = Color.red;
-        yield return new WaitForSeconds(0.2f);
-        rend.material.color = originalColor;
     }
 }
