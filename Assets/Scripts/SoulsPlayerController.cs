@@ -19,12 +19,17 @@ public class SoulsPlayerController : MonoBehaviour
     [Header("Dodge Roll Settings")]
     public float rollSpeed = 8.25f;
     public float rollDuration = 0.55f;
+    [Tooltip("How long (in seconds) from the start of the roll the player is immune to damage.")]
+    public float iFrameDuration = 0.35f; 
     public float rollStaminaCost = 25f;
     public float sprintStaminaCost = 15f;
 
     public bool isRolling { get; private set; } = false;
     private float rollTimer = 0f;
     private Vector3 rollDirection;
+
+    // Returns true if currently rolling and within the I-frame window
+    public bool IsInvincible => isRolling && (rollDuration - rollTimer) <= iFrameDuration;
 
     [Header("Physics")]
     public float gravity = -9.81f;

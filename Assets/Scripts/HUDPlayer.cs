@@ -16,10 +16,12 @@ public class HUDPlayer : MonoBehaviour
 
     public bool isDead { get; private set; } = false;
     private Animator animator;
+    private SoulsPlayerController movementController;
 
     void Start()
     {
         animator = GetComponentInChildren<Animator>();
+        movementController = GetComponent<SoulsPlayerController>();
         currentHealth = maxHealth;
         currentStamina = maxStamina;
     }
@@ -55,6 +57,13 @@ public class HUDPlayer : MonoBehaviour
     public void TakeDamage(float amount)
     {
         if (isDead) return;
+
+        // Block damage if player is currently in I-Frames
+        if (movementController != null && movementController.IsInvincible)
+        {
+            Debug.Log("Dodged attack with I-Frames!");
+            return;
+        }
 
         currentHealth = Mathf.Clamp(currentHealth - amount, 0f, maxHealth);
 
