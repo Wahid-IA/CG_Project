@@ -6,11 +6,13 @@ public class HUDPlayer : MonoBehaviour
 {
     private CharacterController controller;
     private Transform camTransform;
+    private Animator animator;
 
     [Header("Movement Stats")]
     public float walkSpeed = 4f;
     public float runSpeed = 7.5f;
     public float rotationSpeed = 12f;
+    public float speedDampTime = 0.15f;
     private float currentSpeed;
 
     [Header("Vitals (HP & Stamina)")]
@@ -22,6 +24,7 @@ public class HUDPlayer : MonoBehaviour
     public float rollStaminaCost = 25f;
     public float sprintStaminaCost = 15f;
     public float attackStaminaCost = 20f;
+    public bool isDead { get; private set; } = false;
 
     [Header("UI Bar References")]
     public Image healthFillImage;
@@ -53,13 +56,18 @@ public class HUDPlayer : MonoBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
+        animator = GetComponentInChildren<Animator>();
         camTransform = Camera.main != null ? Camera.main.transform : transform;
+        
         currentHealth = maxHealth;
         currentStamina = maxStamina;
     }
 
     void Update()
     {
+        // Stop all controls if player is dead
+        if (isDead) return;
+
         HandleStamina();
         UpdateUI();
 
@@ -115,6 +123,13 @@ public class HUDPlayer : MonoBehaviour
             currentSpeed = walkSpeed;
         }
 
+        // Animate Locomotion (Idle = 0.0, Walk = 0.3, Sprint = 1.0)
+        float animSpeedTarget = direction.magnitude >= 0.1f ? (isSprinting ? 1.0f : 0.3f) : 0f;
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", animSpeedTarget, speedDampTime, Time.deltaTime);
+        }
+
         if (Input.GetKeyDown(KeyCode.Space) && currentStamina >= rollStaminaCost)
         {
             Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;
@@ -157,6 +172,11 @@ public class HUDPlayer : MonoBehaviour
         lastAttackTime = Time.time;
         currentStamina -= attackStaminaCost;
 
+        if (animator != null)
+        {
+            animator.SetTrigger("Attack");
+        }
+
         Vector3 hitBoxCenter = transform.position + transform.forward * attackRange + Vector3.up * 1f;
         Collider[] hitEnemies = Physics.OverlapSphere(hitBoxCenter, attackRadius);
 
@@ -171,6 +191,30 @@ public class HUDPlayer : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void TakeDamage(float amount)
+    {
+        if (isDead) return;
+
+        currentHealth = Mathf.Clamp(currentHealth - amount, 0f, maxHealth);
+
+        if (currentHealth <= 0f)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        isDead = true;
+
+        if (animator != null)
+        {
+            animator.SetTrigger("Die");
+        }
+
+        controller.enabled = false;
     }
 
     void FindNearestEnemy()
@@ -210,12 +254,26 @@ public class HUDPlayer : MonoBehaviour
 
         float targetAngle = Mathf.Atan2(inputDir.x, inputDir.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
         rollDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+
+        if (animator != null)
+        {
+            animator.SetFloat("Speed", 0f, 0.05f, Time.deltaTime);
+            animator.SetTrigger("Roll");
+        }
     }
 
     void PerformRoll()
     {
         rollTimer -= Time.deltaTime;
-        controller.Move(rollDirection * rollSpeed * Time.deltaTime);
+        
+        // Progress from 1.0 (start) down to 0.0 (end)
+        float normalizedTime = Mathf.Clamp01(rollTimer / rollDuration);
+        
+        // Sine curve eases speed out during recovery frames to sync with animation
+        float currentRollSpeed = rollSpeed * Mathf.Sin(normalizedTime * Mathf.PI * 0.5f);
+
+        controller.Move(rollDirection * currentRollSpeed * Time.deltaTime);
+
         if (rollTimer <= 0f) isRolling = false;
     }
 

@@ -20,10 +20,20 @@ public class BossHealthBarUI : MonoBehaviour
 
     void Update()
     {
-        if (bossController == null || bossBarFill == null || healthBarContainer == null) return;
+        // Hide bar if boss is destroyed
+        if (bossController == null)
+        {
+            if (healthBarContainer != null && healthBarContainer.activeSelf)
+            {
+                healthBarContainer.SetActive(false);
+            }
+            return;
+        }
+
+        if (bossBarFill == null || healthBarContainer == null) return;
 
         // Show bar when boss wakes up
-        if (bossController.isAwakened && !isBarActive)
+        if (bossController.isAwakened && !isBarActive && !bossController.isDead)
         {
             isBarActive = true;
             healthBarContainer.SetActive(true);
@@ -32,11 +42,11 @@ public class BossHealthBarUI : MonoBehaviour
         // Smoothly update fill amount based on boss health
         if (isBarActive)
         {
-            float healthPercentage = bossController.currentHealth / bossController.maxHealth;
+            float healthPercentage = Mathf.Clamp01(bossController.currentHealth / bossController.maxHealth);
             bossBarFill.fillAmount = Mathf.Lerp(bossBarFill.fillAmount, healthPercentage, Time.deltaTime * 10f);
 
-            // Hide when boss dies
-            if (bossController.currentHealth <= 0)
+            // Hide when boss dies or health drops to 0
+            if (bossController.currentHealth <= 0 || bossController.isDead)
             {
                 healthBarContainer.SetActive(false);
             }

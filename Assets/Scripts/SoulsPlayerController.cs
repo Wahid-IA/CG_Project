@@ -43,8 +43,6 @@ public class SoulsPlayerController : MonoBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
-        
-        // Searches root and child GameObjects for the Animator component
         animator = GetComponentInChildren<Animator>();
 
         if (Camera.main != null)
@@ -75,7 +73,6 @@ public class SoulsPlayerController : MonoBehaviour
 
     void HandleCombat()
     {
-        // Trigger attack on Left Mouse Click if off cooldown and stamina is available
         if (Input.GetMouseButtonDown(0) && Time.time >= lastAttackTime + attackCooldown && currentStamina >= attackStaminaCost)
         {
             lastAttackTime = Time.time;
@@ -94,7 +91,6 @@ public class SoulsPlayerController : MonoBehaviour
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
 
-        // Check Sprint Input (Left Shift)
         bool isSprinting = Input.GetKey(KeyCode.LeftShift) && direction.magnitude > 0 && currentStamina > 5f;
 
         if (isSprinting)
@@ -107,20 +103,17 @@ public class SoulsPlayerController : MonoBehaviour
             currentSpeed = walkSpeed;
         }
 
-        // Calculate Target Animation Speed (Idle = 0.0, Walk = 0.3, Sprint = 1.0)
         float animSpeedTarget = 0f;
         if (direction.magnitude >= 0.1f)
         {
             animSpeedTarget = isSprinting ? 1.0f : 0.3f;
         }
 
-        // Smoothly update the Animator Speed parameter
         if (animator != null)
         {
             animator.SetFloat("Speed", animSpeedTarget, speedDampTime, Time.deltaTime);
         }
 
-        // Dodge roll input (Spacebar)
         if (Input.GetKeyDown(KeyCode.Space) && currentStamina >= rollStaminaCost)
         {
             Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;
@@ -138,7 +131,6 @@ public class SoulsPlayerController : MonoBehaviour
             controller.Move(moveDir.normalized * currentSpeed * Time.deltaTime);
         }
 
-        // Apply Gravity
         if (controller.isGrounded && velocity.y < 0)
         {
             velocity.y = -2f;
@@ -152,15 +144,14 @@ public class SoulsPlayerController : MonoBehaviour
         isRolling = true;
         rollTimer = rollDuration;
         currentStamina -= rollStaminaCost;
-        Debug.Log("Dodge Roll Executed! Remaining Stamina: " + currentStamina);
 
         float targetAngle = Mathf.Atan2(inputDir.x, inputDir.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
         rollDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
 
-        // Reset movement speed in animator during roll
         if (animator != null)
         {
             animator.SetFloat("Speed", 0f, 0.05f, Time.deltaTime);
+            animator.SetTrigger("Roll");
         }
     }
 

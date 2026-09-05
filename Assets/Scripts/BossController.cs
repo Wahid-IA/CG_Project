@@ -8,8 +8,9 @@ public class BossController : MonoBehaviour
     [Header("Boss Stats")]
     public float maxHealth = 300f;
     public float currentHealth;
-    public float moveSpeed = 4f;         
+    public float moveSpeed = 4f;        
     public float rotationSpeed = 10f;
+    public bool isDead { get; private set; } = false;
 
     [Header("Combat Settings")]
     public float attackRange = 2.5f;
@@ -31,8 +32,6 @@ public class BossController : MonoBehaviour
     void Start()
     {
         currentHealth = maxHealth;
-
-        // Automatically fetch Animator component on this GameObject or child rig
         animator = GetComponentInChildren<Animator>();
 
         if (playerTransform == null)
@@ -49,6 +48,9 @@ public class BossController : MonoBehaviour
 
     void Update()
     {
+        // Stop movement and attack logic if boss is dead
+        if (isDead) return;
+
         // If unawakened or missing target, force animation speed to Idle (0) smoothly
         if (!isAwakened || playerTransform == null) 
         {
@@ -83,15 +85,15 @@ public class BossController : MonoBehaviour
 
     void UpdateAnimationSpeed(float targetSpeed)
     {
-        if (animator != null)
+        if (animator != null && !isDead)
         {
-            // Smoothly damp the Speed parameter over speedDampTime
             animator.SetFloat("Speed", targetSpeed, speedDampTime, Time.deltaTime);
         }
     }
 
     public void WakeUpBoss()
     {
+        if (isDead) return;
         isAwakened = true;
     }
 
@@ -99,15 +101,26 @@ public class BossController : MonoBehaviour
     {
         lastAttackTime = Time.time;
 
-        HUDPlayer playerScript = playerTransform.GetComponent<HUDPlayer>();
-        if (playerScript != null)
+        // Trigger boss attack animation
+        if (animator != null)
         {
-            playerScript.currentHealth -= attackDamage;
+            animator.SetTrigger("Attack");
+        }
+
+        if (playerTransform != null)
+        {
+            HUDPlayer playerScript = playerTransform.GetComponent<HUDPlayer>();
+            if (playerScript != null)
+            {
+                playerScript.TakeDamage(attackDamage);
+            }
         }
     }
 
     public void TakeDamage(float damageAmount)
     {
+        if (isDead) return;
+
         isAwakened = true; 
         currentHealth -= damageAmount;
 
@@ -132,6 +145,22 @@ public class BossController : MonoBehaviour
 
     void Die()
     {
-        Destroy(gameObject);
+        isDead = true;
+
+        // Trigger death animation
+        if (animator != null)
+        {
+            animator.SetTrigger("Die");
+        }
+
+        // Disable colliders so player doesn't get blocked by the falling body
+        Collider[] colliders = GetComponentsInChildren<Collider>();
+        foreach (Collider col in colliders)
+        {
+            col.enabled = false;
+        }
+
+        // Destroy boss GameObject after 3 seconds to allow death animation to finish playing
+        Destroy(gameObject, 3f);
     }
 }
