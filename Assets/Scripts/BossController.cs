@@ -19,6 +19,11 @@ public class BossController : MonoBehaviour
     private float lastAttackTime = 0f;
     public float attackDamage = 15f;
 
+    [Header("Stagger State")]
+    public float staggerDuration = 2.5f;
+    public bool isStaggered { get; private set; } = false;
+    private float staggerTimer = 0f;
+
     [Header("Awakening State")]
     public bool isAwakened = false;     
 
@@ -56,6 +61,19 @@ public class BossController : MonoBehaviour
     {
         // Stop movement and attack logic if boss is dead
         if (isDead) return;
+
+        // Handle Stagger State from Parry
+        if (isStaggered)
+        {
+            staggerTimer -= Time.deltaTime;
+            UpdateAnimationSpeed(0f); // Freeze boss in place while staggered
+
+            if (staggerTimer <= 0f)
+            {
+                isStaggered = false;
+            }
+            return; // Prevent movement and attacks while staggered
+        }
 
         // Ensure player script reference is cached
         if (playerScript == null && playerTransform != null)
@@ -115,7 +133,6 @@ public class BossController : MonoBehaviour
 
         lastAttackTime = Time.time;
 
-        // Trigger boss attack animation
         if (animator != null)
         {
             animator.SetTrigger("Attack");
@@ -123,8 +140,24 @@ public class BossController : MonoBehaviour
 
         if (playerScript != null)
         {
-            playerScript.TakeDamage(attackDamage);
+            // Pass 'gameObject' so HUDPlayer knows who attacked
+            playerScript.TakeDamage(attackDamage, gameObject);
         }
+    }
+
+    public void GetParried()
+    {
+        if (isDead) return;
+
+        isStaggered = true;
+        staggerTimer = staggerDuration;
+
+        if (animator != null)
+        {
+            animator.SetTrigger("Stagger");
+        }
+
+        Debug.Log("Boss was parried and staggered!");
     }
 
     public void TakeDamage(float damageAmount)

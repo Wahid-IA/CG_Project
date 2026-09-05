@@ -54,17 +54,36 @@ public class HUDPlayer : MonoBehaviour
         }
     }
 
-    public void TakeDamage(float amount)
+    public void TakeDamage(float amount, GameObject attacker = null)
     {
         if (isDead) return;
 
-        // Block damage if player is currently in I-Frames
+        // 1. Check Dodge Roll I-Frames
         if (movementController != null && movementController.IsInvincible)
         {
             Debug.Log("Dodged attack with I-Frames!");
             return;
         }
 
+        // 2. Check Parry Window
+        SoulsCombatSystem combat = GetComponent<SoulsCombatSystem>();
+        if (combat != null && combat.IsParryActive)
+        {
+            Debug.Log("PARRY SUCCESSFUL!");
+
+            // Stagger the attacker if reference was provided
+            if (attacker != null)
+            {
+                BossController boss = attacker.GetComponent<BossController>();
+                if (boss != null)
+                {
+                    boss.GetParried();
+                }
+            }
+            return; // Block damage completely
+        }
+
+        // 3. Normal Damage logic
         currentHealth = Mathf.Clamp(currentHealth - amount, 0f, maxHealth);
 
         if (currentHealth <= 0f)

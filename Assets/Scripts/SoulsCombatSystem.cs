@@ -20,6 +20,17 @@ public class SoulsCombatSystem : MonoBehaviour
     public float attackDamage = 25f;
     public float attackStaminaCost = 20f;
 
+    [Header("Parry Settings")]
+    public float parryStaminaCost = 15f;
+    public float parryStartup = 0.533f/3f;   // Delay before active parry frames start
+    public float parryWindow = 0.5f/2f;    // Duration where parry is active
+    public float parryRecovery = 0.433f/1.25f;  // Cooldown after parry window ends
+    private float parryTimer = 0f;
+    public bool isParrying { get; private set; } = false;
+
+    public bool IsParryActive => isParrying && (parryTimer >= parryStartup) && (parryTimer <= (parryStartup + parryWindow));
+
+
     void Start()
     {
         hudPlayer = GetComponent<HUDPlayer>();
@@ -35,7 +46,35 @@ public class SoulsCombatSystem : MonoBehaviour
 
         if (movementController != null && movementController.isRolling) return;
 
+        // Handle Parry Input (Right Click)
+        if (Input.GetMouseButtonDown(1) && !isParrying)
+        {
+            PerformParry();
+        }
+
+        if (isParrying)
+        {
+            parryTimer += Time.deltaTime;
+            if (parryTimer >= (parryStartup + parryWindow + parryRecovery))
+            {
+                isParrying = false;
+            }
+        }
+
         HandleCombat();
+    }
+
+    void PerformParry()
+    {
+        if (!hudPlayer.ConsumeStamina(parryStaminaCost)) return;
+
+        isParrying = true;
+        parryTimer = 0f;
+
+        if (animator != null)
+        {
+            animator.SetTrigger("Parry");
+        }
     }
 
     void HandleTargetLock()
