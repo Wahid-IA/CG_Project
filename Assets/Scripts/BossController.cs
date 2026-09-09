@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(CharacterController))]
 public class BossController : MonoBehaviour
 {
     [Header("Target Reference")]
@@ -11,6 +12,7 @@ public class BossController : MonoBehaviour
     public float currentHealth;
     public float moveSpeed = 4f;        
     public float rotationSpeed = 10f;
+    public float gravity = 9.81f; // Added for ground snapping
     public bool isDead { get; private set; } = false;
 
     [Header("Combat Settings")]
@@ -38,10 +40,17 @@ public class BossController : MonoBehaviour
     [Header("Visuals")]
     public Renderer bossRenderer;
 
+    // --- Added for physics movement ---
+    private CharacterController controller;
+    private float verticalVelocity = 0f;
+
     void Start()
     {
         currentHealth = maxHealth;
         animator = GetComponentInChildren<Animator>();
+        
+        // Initialize Character Controller
+        controller = GetComponent<CharacterController>();
 
         if (playerTransform == null)
         {
@@ -64,11 +73,24 @@ public class BossController : MonoBehaviour
     {
         if (isDead) return;
 
+        // 1. Calculate Gravity continuously
+        if (controller.isGrounded && verticalVelocity < 0)
+        {
+            verticalVelocity = -2f; // Snaps boss to slopes
+        }
+        else
+        {
+            verticalVelocity -= gravity * Time.deltaTime;
+        }
+
         // Handle Staggered/Stunned State (Disables movement & attacks)
         if (isStaggered)
         {
             staggerTimer -= Time.deltaTime;
             UpdateAnimationSpeed(0f); // Freeze movement during stagger
+
+            // Apply gravity even while staggered so they don't hover
+            controller.Move(new Vector3(0, verticalVelocity, 0) * Time.deltaTime);
 
             if (staggerTimer <= 0f)
             {
@@ -98,6 +120,8 @@ public class BossController : MonoBehaviour
         if (!isAwakened || playerTransform == null || (playerScript != null && playerScript.isDead)) 
         {
             UpdateAnimationSpeed(0f);
+            // Apply gravity while asleep
+            controller.Move(new Vector3(0, verticalVelocity, 0) * Time.deltaTime);
             return;
         }
 
@@ -112,16 +136,22 @@ public class BossController : MonoBehaviour
         }
 
         float targetAnimSpeed = 0f;
+        Vector3 moveVelocity = Vector3.zero;
 
         if (distanceToPlayer > attackRange)
         {
-            transform.position += dirToPlayer * moveSpeed * Time.deltaTime;
+            // 2. Set horizontal movement direction instead of forcing transform.position
+            moveVelocity = dirToPlayer * moveSpeed;
             targetAnimSpeed = 1f;
         }
         else if (Time.time >= lastAttackTime + attackCooldown)
         {
             PerformBossAttack();
         }
+
+        // 3. Combine horizontal movement and gravity, then execute move
+        moveVelocity.y = verticalVelocity;
+        controller.Move(moveVelocity * Time.deltaTime);
 
         UpdateAnimationSpeed(targetAnimSpeed);
     }
