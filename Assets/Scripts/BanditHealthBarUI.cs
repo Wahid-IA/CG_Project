@@ -1,57 +1,64 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class BanditHealthBarUI : MonoBehaviour
+public class BossHealthBarUI : MonoBehaviour
 {
     [Header("UI References")]
     public GameObject healthBarContainer; 
     public Image bossBarFill; 
     public Image bossStaggerBarFill; 
-    public BanditBoss banditBossController; 
-    private Camera mainCam;
+    public BossController bossController; // (Note: If this needs to support BanditBoss too, see below)
+
+    private bool isBarActive = false;
 
     void Start()
     {
-        mainCam = Camera.main;
-        if (healthBarContainer != null) healthBarContainer.SetActive(false);
+        if (healthBarContainer != null)
+        {
+            healthBarContainer.SetActive(false); // Hide bar until boss awakens
+        }
     }
 
-    void LateUpdate()
+    void Update()
     {
-        if (mainCam != null)
+        // Hide bar if boss is destroyed
+        if (bossController == null)
         {
-            transform.LookAt(transform.position + mainCam.transform.rotation * Vector3.forward,
-                             mainCam.transform.rotation * Vector3.up);
-        }
-
-        if (banditBossController == null)
-        {
-            if (healthBarContainer != null && healthBarContainer.activeSelf) healthBarContainer.SetActive(false);
+            if (healthBarContainer != null && healthBarContainer.activeSelf)
+            {
+                healthBarContainer.SetActive(false);
+            }
             return;
         }
 
         if (healthBarContainer == null) return;
 
-        if (banditBossController.isAwakened && !healthBarContainer.activeSelf && !banditBossController.isDead)
+        // Show bar when boss wakes up
+        if (bossController.isAwakened && !isBarActive && !bossController.isDead)
         {
+            isBarActive = true;
             healthBarContainer.SetActive(true);
         }
 
-        if (healthBarContainer.activeSelf)
+        // Smoothly update fill amounts based on boss health and stagger
+        if (isBarActive)
         {
+            // Health Fill
             if (bossBarFill != null)
             {
-                float healthPct = Mathf.Clamp01(banditBossController.currentHealth / banditBossController.maxHealth);
-                bossBarFill.fillAmount = Mathf.Lerp(bossBarFill.fillAmount, healthPct, Time.deltaTime * 10f);
+                float healthPercentage = Mathf.Clamp01(bossController.currentHealth / bossController.maxHealth);
+                bossBarFill.fillAmount = Mathf.Lerp(bossBarFill.fillAmount, healthPercentage, Time.deltaTime * 10f);
             }
 
+            // Stagger Fill
             if (bossStaggerBarFill != null)
             {
-                float staggerPct = Mathf.Clamp01(banditBossController.currentStagger / banditBossController.maxStagger);
-                bossStaggerBarFill.fillAmount = Mathf.Lerp(bossStaggerBarFill.fillAmount, staggerPct, Time.deltaTime * 10f);
+                float staggerPercentage = Mathf.Clamp01(bossController.currentStagger / bossController.maxStagger);
+                bossStaggerBarFill.fillAmount = Mathf.Lerp(bossStaggerBarFill.fillAmount, staggerPercentage, Time.deltaTime * 10f);
             }
 
-            if (banditBossController.currentHealth <= 0 || banditBossController.isDead)
+            // Hide when boss dies or health drops to 0 (Only after it has been activated)
+            if (isBarActive && (bossController.currentHealth <= 0 || bossController.isDead))
             {
                 healthBarContainer.SetActive(false);
             }
