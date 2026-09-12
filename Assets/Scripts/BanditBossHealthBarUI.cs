@@ -17,8 +17,11 @@ public class BanditBossHealthBarUI : MonoBehaviour
         {
             healthBarContainer.SetActive(false); // Hide bar until boss awakens
         }
+        
+        // Safety check to ensure the canvas itself is enabled
+        Canvas canvas = GetComponent<Canvas>();
+        if (canvas != null) canvas.enabled = true;
     }
-
     void Update()
     {
         // Hide bar if boss is destroyed
