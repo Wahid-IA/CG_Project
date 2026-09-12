@@ -7,7 +7,7 @@ public class BossHealthBarUI : MonoBehaviour
     public GameObject healthBarContainer; 
     public Image bossBarFill; 
     public Image bossStaggerBarFill; 
-    public BossController bossController; // (Note: If this needs to support BanditBoss too, see below)
+    public BossController bossController; 
 
     private bool isBarActive = false;
 
