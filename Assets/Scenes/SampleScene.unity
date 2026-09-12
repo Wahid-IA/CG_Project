@@ -20686,7 +20686,7 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400028, guid: 8d04ac4429a0669408c96276dc933726, type: 3}
   m_PrefabInstance: {fileID: 1729582741}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &323445330
+--- !u!114 &323445333
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -20707,7 +20707,6 @@ MonoBehaviour:
   attackRange: 2.8
   attackCooldown: 1.8
   attackDamage: 20
-  weaponHitbox: {fileID: 1136152937}
   maxStagger: 80
   currentStagger: 0
   defaultStaggerPerHit: 20
@@ -20716,7 +20715,7 @@ MonoBehaviour:
   isAwakened: 0
   speedDampTime: 0.1
   bossRenderer: {fileID: 0}
---- !u!143 &323445331
+--- !u!143 &323445334
 CharacterController:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -46089,7 +46088,7 @@ MonoBehaviour:
   healthBarContainer: {fileID: 1047200003}
   bossBarFill: {fileID: 1269056513}
   bossStaggerBarFill: {fileID: 0}
-  banditBossController: {fileID: 323445330}
+  banditBossController: {fileID: 323445333}
 --- !u!4 &708252609
 Transform:
   m_ObjectHideFlags: 0
@@ -74264,7 +74263,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 014b039f31f486c4cbdcc28ce1c8d942, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BanditWeaponHitbox
-  bossController: {fileID: 323445330}
+  bossController: {fileID: 0}
 --- !u!54 &1136152939
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -108205,7 +108204,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 25c68d031b3e23a4f99b350073d6cfa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BanditAggroTrigger
-  banditBossController: {fileID: 323445330}
+  banditBossController: {fileID: 323445333}
 --- !u!1001 &1659091127
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -113724,10 +113723,10 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 100028, guid: 8d04ac4429a0669408c96276dc933726, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 323445331}
+      addedObject: {fileID: 323445334}
     - targetCorrespondingSourceObject: {fileID: 100028, guid: 8d04ac4429a0669408c96276dc933726, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 323445330}
+      addedObject: {fileID: 323445333}
     - targetCorrespondingSourceObject: {fileID: 100430, guid: 8d04ac4429a0669408c96276dc933726, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1136152937}
