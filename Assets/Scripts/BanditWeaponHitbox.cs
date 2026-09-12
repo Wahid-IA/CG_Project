@@ -17,7 +17,14 @@ public class BanditWeaponHitbox : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             hasHitThisSwing = true;
-            other.SendMessage("TakeDamage", bossController.attackDamage, SendMessageOptions.DontRequireReceiver);
+            
+            // Deliver damage directly to the HUDPlayer script
+            HUDPlayer playerHealth = other.GetComponent<HUDPlayer>();
+            if (playerHealth != null)
+            {
+                playerHealth.TakeDamage(bossController.attackDamage, bossController.gameObject);
+            }
+            
             Debug.Log("Bandit King hit Player for " + bossController.attackDamage + " damage!");
         }
     }
