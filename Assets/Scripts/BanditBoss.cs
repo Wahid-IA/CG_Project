@@ -11,19 +11,19 @@ public class BanditBoss : MonoBehaviour
     [Header("Boss Stats")]
     public float maxHealth = 250f;
     public float currentHealth;
-    public float moveSpeed = 4.5f;         
+    public float moveSpeed = 4.5f;        
     public float rotationSpeed = 12f;    
     public float gravity = 9.81f; 
     public bool isDead { get; private set; } = false;
 
     [Header("Combat Settings")]
-    public float attackRange = 2.8f;       
+    public float attackRange = 2.8f;      
     public float attackCooldown = 1.8f;    
     private float lastAttackTime = 0f;
     public float attackDamage = 20f;
 
     [Header("Stagger System")]
-    public float maxStagger = 80f;       
+    public float maxStagger = 80f;      
     public float currentStagger = 0f;
     public float defaultStaggerPerHit = 20f;
     public float staggerDecayRate = 6f; 
@@ -147,7 +147,6 @@ public class BanditBoss : MonoBehaviour
             animator.SetTrigger("Attack");
         }
 
-        // Directly apply damage to the player when in range, just like your working boss
         if (playerScript != null)
         {
             playerScript.TakeDamage(attackDamage, gameObject);
@@ -166,7 +165,11 @@ public class BanditBoss : MonoBehaviour
     {
         isStaggered = true;
         staggerTimer = staggerDuration;
-        if (animator != null) animator.SetBool("IsStagger", true); 
+        if (animator != null)
+        {
+            animator.SetBool("IsStagger", true); 
+        }
+        Debug.Log("Bandit King staggered!");
     }
 
     public void TakeDamage(float damageAmount)
@@ -179,6 +182,9 @@ public class BanditBoss : MonoBehaviour
         if (isDead) return;
         isAwakened = true; 
         currentHealth -= damageAmount;
+        
+        Debug.Log("Bandit King took damage! Current Health: " + currentHealth);
+
         AddStagger(customStaggerAmount);
 
         if (bossRenderer != null) StartCoroutine(FlashColor());
