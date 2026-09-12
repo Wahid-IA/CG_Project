@@ -6,6 +6,7 @@ public class BanditBoss : MonoBehaviour
 {
     [Header("Target Reference")]
     public Transform playerTransform;
+    private HUDPlayer playerScript;
 
     [Header("Boss Stats")]
     public float maxHealth = 250f;
@@ -20,7 +21,6 @@ public class BanditBoss : MonoBehaviour
     public float attackCooldown = 1.8f;    
     private float lastAttackTime = 0f;
     public float attackDamage = 20f;
-    public Collider weaponHitbox; 
 
     [Header("Stagger System")]
     public float maxStagger = 80f;       
@@ -53,14 +53,14 @@ public class BanditBoss : MonoBehaviour
             if (playerObj != null) playerTransform = playerObj.transform;
         }
 
+        if (playerTransform != null)
+        {
+            playerScript = playerTransform.GetComponent<HUDPlayer>();
+        }
+
         if (bossRenderer == null)
         {
             bossRenderer = GetComponentInChildren<Renderer>();
-        }
-
-        if (weaponHitbox != null)
-        {
-            weaponHitbox.enabled = false;
         }
     }
 
@@ -97,12 +97,15 @@ public class BanditBoss : MonoBehaviour
             currentStagger = Mathf.Clamp(currentStagger - staggerDecayRate * Time.deltaTime, 0f, maxStagger);
         }
 
-        // If not awakened, apply gravity, stay in place, but ensure Animator sets speed to 0 (playing Idle)
-        if (!isAwakened || playerTransform == null) 
+        if (playerScript == null && playerTransform != null)
         {
-            UpdateAnimationSpeed(0f); // 0f keeps the animator playing the Idle state instead of freezing
-            Vector3 idleMove = new Vector3(0, verticalVelocity, 0);
-            controller.Move(idleMove * Time.deltaTime);
+            playerScript = playerTransform.GetComponent<HUDPlayer>();
+        }
+
+        if (!isAwakened || playerTransform == null || (playerScript != null && playerScript.isDead)) 
+        {
+            UpdateAnimationSpeed(0f);
+            controller.Move(new Vector3(0, verticalVelocity, 0) * Time.deltaTime);
             return;
         }
 
@@ -126,7 +129,7 @@ public class BanditBoss : MonoBehaviour
         }
         else if (Time.time >= lastAttackTime + attackCooldown)
         {
-            TriggerBossAttack();
+            PerformBossAttack();
         }
 
         moveVelocity.y = verticalVelocity;
@@ -134,23 +137,22 @@ public class BanditBoss : MonoBehaviour
         UpdateAnimationSpeed(targetAnimSpeed);
     }
 
-    void TriggerBossAttack()
+    void PerformBossAttack()
     {
+        if (playerScript != null && playerScript.isDead) return;
+
         lastAttackTime = Time.time;
         if (animator != null)
         {
             animator.SetTrigger("Attack");
         }
-    }
 
-    public void EnableWeaponHitbox()
-    {
-        if (weaponHitbox != null) weaponHitbox.enabled = true;
-    }
-
-    public void DisableWeaponHitbox()
-    {
-        if (weaponHitbox != null) weaponHitbox.enabled = false;
+        // Directly apply damage to the player when in range, just like your working boss
+        if (playerScript != null)
+        {
+            playerScript.TakeDamage(attackDamage, gameObject);
+            Debug.Log("Bandit King directly attacked player for " + attackDamage + " damage!");
+        }
     }
 
     public void AddStagger(float amount)
@@ -164,16 +166,20 @@ public class BanditBoss : MonoBehaviour
     {
         isStaggered = true;
         staggerTimer = staggerDuration;
-        DisableWeaponHitbox();
         if (animator != null) animator.SetBool("IsStagger", true); 
     }
 
     public void TakeDamage(float damageAmount)
     {
+        TakeDamage(damageAmount, defaultStaggerPerHit);
+    }
+
+    public void TakeDamage(float damageAmount, float customStaggerAmount)
+    {
         if (isDead) return;
         isAwakened = true; 
         currentHealth -= damageAmount;
-        AddStagger(defaultStaggerPerHit);
+        AddStagger(customStaggerAmount);
 
         if (bossRenderer != null) StartCoroutine(FlashColor());
         if (currentHealth <= 0) Die();
@@ -195,19 +201,15 @@ public class BanditBoss : MonoBehaviour
 
     IEnumerator FlashColor()
     {
-        if (bossRenderer != null && bossRenderer.material.HasProperty("_BaseColor"))
-        {
-            Color orig = bossRenderer.material.GetColor("_BaseColor");
-            bossRenderer.material.SetColor("_BaseColor", Color.white);
-            yield return new WaitForSeconds(0.12f);
-            bossRenderer.material.SetColor("_BaseColor", orig);
-        }
+        Color orig = bossRenderer.material.color;
+        bossRenderer.material.color = Color.white;
+        yield return new WaitForSeconds(0.15f);
+        bossRenderer.material.color = orig;
     }
 
     void Die()
     {
         isDead = true;
-        DisableWeaponHitbox();
 
         if (animator != null)
         {
@@ -218,6 +220,6 @@ public class BanditBoss : MonoBehaviour
         Collider[] colliders = GetComponentsInChildren<Collider>();
         foreach (Collider col in colliders) col.enabled = false;
 
-        Destroy(gameObject, 4f);
+        Destroy(gameObject, 3f);
     }
 }
