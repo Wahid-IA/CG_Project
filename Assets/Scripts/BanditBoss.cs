@@ -97,21 +97,13 @@ public class BanditBoss : MonoBehaviour
             currentStagger = Mathf.Clamp(currentStagger - staggerDecayRate * Time.deltaTime, 0f, maxStagger);
         }
 
+        // If not awakened, apply gravity, stay in place, but ensure Animator sets speed to 0 (playing Idle)
         if (!isAwakened || playerTransform == null) 
         {
-            UpdateAnimationSpeed(0f);
-            controller.Move(new Vector3(0, verticalVelocity, 0) * Time.deltaTime);
+            UpdateAnimationSpeed(0f); // 0f keeps the animator playing the Idle state instead of freezing
+            Vector3 idleMove = new Vector3(0, verticalVelocity, 0);
+            controller.Move(idleMove * Time.deltaTime);
             return;
-        }
-
-        // Fallback safety: If playing an attack animation state, ensure hitbox is active so damage works even without animation events
-        if (animator != null && weaponHitbox != null)
-        {
-            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            if (stateInfo.IsName("Attack") || stateInfo.IsName("atack1") || stateInfo.tagHash == Animator.StringToHash("Attack"))
-            {
-                if (!weaponHitbox.enabled) weaponHitbox.enabled = true;
-            }
         }
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
