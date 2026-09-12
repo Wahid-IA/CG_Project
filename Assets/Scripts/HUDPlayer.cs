@@ -74,10 +74,18 @@ public class HUDPlayer : MonoBehaviour
             // Stagger the attacker if reference was provided
             if (attacker != null)
             {
+                // Handles your other/original boss type safely
                 BossController boss = attacker.GetComponent<BossController>();
                 if (boss != null)
                 {
                     boss.GetParried();
+                }
+
+                // Added support for Bandit King boss stagger feedback on parry
+                BanditBoss banditBoss = attacker.GetComponent<BanditBoss>();
+                if (banditBoss != null)
+                {
+                    banditBoss.AddStagger(banditBoss.maxStagger); // Instantly triggers stagger/flinch
                 }
             }
             return; // Block damage completely
