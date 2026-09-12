@@ -104,6 +104,16 @@ public class BanditBoss : MonoBehaviour
             return;
         }
 
+        // Fallback safety: If playing an attack animation state, ensure hitbox is active so damage works even without animation events
+        if (animator != null && weaponHitbox != null)
+        {
+            AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            if (stateInfo.IsName("Attack") || stateInfo.IsName("atack1") || stateInfo.tagHash == Animator.StringToHash("Attack"))
+            {
+                if (!weaponHitbox.enabled) weaponHitbox.enabled = true;
+            }
+        }
+
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
         Vector3 dirToPlayer = (playerTransform.position - transform.position).normalized;
         dirToPlayer.y = 0;
