@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class BossHealthBarUI : MonoBehaviour
+public class BanditBossHealthBarUI : MonoBehaviour
 {
     [Header("UI References")]
     public GameObject healthBarContainer; 
     public Image bossBarFill; 
     public Image bossStaggerBarFill; 
-    public BossController bossController; 
+    public BanditBoss banditBoss; // Points specifically to the Bandit King script
 
     private bool isBarActive = false;
 
@@ -22,7 +22,7 @@ public class BossHealthBarUI : MonoBehaviour
     void Update()
     {
         // Hide bar if boss is destroyed
-        if (bossController == null)
+        if (banditBoss == null)
         {
             if (healthBarContainer != null && healthBarContainer.activeSelf)
             {
@@ -34,31 +34,31 @@ public class BossHealthBarUI : MonoBehaviour
         if (healthBarContainer == null) return;
 
         // Show bar when boss wakes up
-        if (bossController.isAwakened && !isBarActive && !bossController.isDead)
+        if (banditBoss.isAwakened && !isBarActive && !banditBoss.isDead)
         {
             isBarActive = true;
             healthBarContainer.SetActive(true);
         }
 
-        // Smoothly update fill amounts based on boss health and stagger
+        // Smoothly update fill amounts based on health and stagger
         if (isBarActive)
         {
             // Health Fill
             if (bossBarFill != null)
             {
-                float healthPercentage = Mathf.Clamp01(bossController.currentHealth / bossController.maxHealth);
+                float healthPercentage = Mathf.Clamp01(banditBoss.currentHealth / banditBoss.maxHealth);
                 bossBarFill.fillAmount = Mathf.Lerp(bossBarFill.fillAmount, healthPercentage, Time.deltaTime * 10f);
             }
 
             // Stagger Fill
             if (bossStaggerBarFill != null)
             {
-                float staggerPercentage = Mathf.Clamp01(bossController.currentStagger / bossController.maxStagger);
+                float staggerPercentage = Mathf.Clamp01(banditBoss.currentStagger / banditBoss.maxStagger);
                 bossStaggerBarFill.fillAmount = Mathf.Lerp(bossStaggerBarFill.fillAmount, staggerPercentage, Time.deltaTime * 10f);
             }
 
             // Hide when boss dies or health drops to 0 (Only after it has been activated)
-            if (isBarActive && (bossController.currentHealth <= 0 || bossController.isDead))
+            if (isBarActive && (banditBoss.currentHealth <= 0 || banditBoss.isDead))
             {
                 healthBarContainer.SetActive(false);
             }
