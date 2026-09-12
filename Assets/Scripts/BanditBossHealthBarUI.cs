@@ -11,7 +11,6 @@ public class BanditBossHealthBarUI : MonoBehaviour
 
     void Start()
     {
-        // Keep the health bar container active immediately on start
         if (healthBarContainer != null)
         {
             healthBarContainer.SetActive(true); 
@@ -20,7 +19,6 @@ public class BanditBossHealthBarUI : MonoBehaviour
 
     void Update()
     {
-        // Hide bar if boss is destroyed
         if (banditBoss == null)
         {
             if (healthBarContainer != null && healthBarContainer.activeSelf)
@@ -32,13 +30,11 @@ public class BanditBossHealthBarUI : MonoBehaviour
 
         if (healthBarContainer == null) return;
 
-        // Ensure container stays active
         if (!healthBarContainer.activeSelf && !banditBoss.isDead)
         {
             healthBarContainer.SetActive(true);
         }
 
-        // Smoothly update fill amounts based on health and stagger
         if (bossBarFill != null)
         {
             float healthPercentage = Mathf.Clamp01(banditBoss.currentHealth / banditBoss.maxHealth);
@@ -51,7 +47,6 @@ public class BanditBossHealthBarUI : MonoBehaviour
             bossStaggerBarFill.fillAmount = Mathf.Lerp(bossStaggerBarFill.fillAmount, staggerPercentage, Time.deltaTime * 10f);
         }
 
-        // Hide only when boss dies or health drops to 0
         if (banditBoss.currentHealth <= 0 || banditBoss.isDead)
         {
             healthBarContainer.SetActive(false);
