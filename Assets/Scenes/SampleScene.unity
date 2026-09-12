@@ -20698,7 +20698,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c4bf50f9ee796f4d862c845864c39a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BanditBoss
-  playerTransform: {fileID: 0}
+  playerTransform: {fileID: 797540241}
   maxHealth: 250
   currentHealth: 0
   moveSpeed: 4.5

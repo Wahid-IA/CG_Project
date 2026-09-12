@@ -54,14 +54,13 @@ public class HUDPlayer : MonoBehaviour
         }
     }
 
-    // --- Player Attack Collision Handler (Added to deal damage to BanditBoss) ---
+    // --- Player Attack Collision Handler (Deals damage to BanditBoss) ---
     private void OnTriggerEnter(Collider other)
     {
-        // Ensures that if your player's weapon hits the boss, damage is applied
         BanditBoss boss = other.GetComponentInParent<BanditBoss>();
         if (boss != null)
         {
-            boss.TakeDamage(25f); // Adjust damage amount as needed
+            boss.TakeDamage(25f); // Damage dealt to the Bandit King
             Debug.Log("Player successfully dealt damage to Bandit King!");
         }
     }
