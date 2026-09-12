@@ -147,7 +147,7 @@ AnimatorController:
     m_IKPass: 0
     m_SyncedLayerAffectsTiming: 0
     m_Controller: {fileID: 9100000}
-  m_EvaluateTransitionsOnStart: 0
+  m_EvaluateTransitionsOnStart: 1
 --- !u!1101 &1101007413396619590
 AnimatorStateTransition:
   m_ObjectHideFlags: 1
