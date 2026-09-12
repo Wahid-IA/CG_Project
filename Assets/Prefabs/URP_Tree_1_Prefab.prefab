@@ -52,6 +52,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: URP_Tree_1_Prefab
       objectReference: {fileID: 0}
+    - target: {fileID: 3451118302482216456, guid: 419b474d3d31ef54e9c101d6e7213aee, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -59,6 +63,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 419b474d3d31ef54e9c101d6e7213aee, type: 3}
       insertIndex: -1
       addedObject: {fileID: 877361813841310204}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 419b474d3d31ef54e9c101d6e7213aee, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 475070723135344583}
   m_SourcePrefab: {fileID: 100100000, guid: 419b474d3d31ef54e9c101d6e7213aee, type: 3}
 --- !u!1 &312762378461279352 stripped
 GameObject:
@@ -93,3 +100,26 @@ LODGroup:
     - renderer: {fileID: -7511558181221131132, guid: 0a9ad2b5edd0c6d49bc3aebe133e3850, type: 3}
   m_Enabled: 1
   m_GlobalIlluminationLOD: 0
+--- !u!136 &475070723135344583
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 312762378461279352}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.81785077
+  m_Height: 5
+  m_Direction: 1
+  m_Center: {x: 0, y: 2, z: 0}
