@@ -54,6 +54,17 @@ public class HUDPlayer : MonoBehaviour
         }
     }
 
+    // --- Player Attack Collision Handler (Deals damage to BanditBoss) ---
+    private void OnTriggerEnter(Collider other)
+    {
+        BanditBoss boss = other.GetComponentInParent<BanditBoss>();
+        if (boss != null)
+        {
+            boss.TakeDamage(25f); // Damage dealt to the Bandit King
+            Debug.Log("Player successfully dealt damage to Bandit King!");
+        }
+    }
+
     public void TakeDamage(float amount, GameObject attacker = null)
     {
         if (isDead) return;
@@ -74,10 +85,18 @@ public class HUDPlayer : MonoBehaviour
             // Stagger the attacker if reference was provided
             if (attacker != null)
             {
+                // Handles your other/original boss type safely
                 BossController boss = attacker.GetComponent<BossController>();
                 if (boss != null)
                 {
                     boss.GetParried();
+                }
+
+                // Added support for Bandit King boss stagger feedback on parry
+                BanditBoss banditBoss = attacker.GetComponent<BanditBoss>();
+                if (banditBoss != null)
+                {
+                    banditBoss.AddStagger(banditBoss.maxStagger); // Instantly triggers stagger/flinch
                 }
             }
             return; // Block damage completely

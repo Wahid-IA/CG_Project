@@ -133,10 +133,18 @@ public class SoulsCombatSystem : MonoBehaviour
         {
             if (col.CompareTag("Enemy"))
             {
+                // Damage your original working boss
                 BossController boss = col.GetComponentInParent<BossController>();
                 if (boss != null)
                 {
                     boss.TakeDamage(attackDamage);
+                }
+
+                // Added support to damage the Bandit King
+                BanditBoss banditBoss = col.GetComponentInParent<BanditBoss>();
+                if (banditBoss != null)
+                {
+                    banditBoss.TakeDamage(attackDamage);
                 }
             }
         }
