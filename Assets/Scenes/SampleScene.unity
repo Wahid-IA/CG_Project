@@ -18062,7 +18062,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BanditBoss
   playerTransform: {fileID: 797540241}
-  maxHealth: 200
+  maxHealth: 80
   currentHealth: 0
   moveSpeed: 4.5
   rotationSpeed: 12
@@ -58352,7 +58352,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BanditHealthBarUI
   healthBarContainer: {fileID: 0}
-  banditBarFill: {fileID: 0}
+  bossBarFill: {fileID: 0}
   banditScript: {fileID: 0}
 --- !u!1001 &1048281335
 PrefabInstance:
@@ -63728,6 +63728,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 100010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2116993645}
+    - targetCorrespondingSourceObject: {fileID: 100010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2116993647}
   m_SourcePrefab: {fileID: 100100000, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
 --- !u!1001 &1149711084
 PrefabInstance:
@@ -88113,7 +88116,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BanditHealthBarUI
   healthBarContainer: {fileID: 1047200003}
-  banditBarFill: {fileID: 481272597}
+  bossBarFill: {fileID: 2165026}
   banditScript: {fileID: 2116993645}
 --- !u!4 &1564065458
 Transform:
@@ -121557,18 +121560,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8a067986f1ef9847a5af3feaf436891, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Bandit
-  playerTransform: {fileID: 797540241}
   maxHealth: 80
-  currentHealth: 0
-  moveSpeed: 3.5
-  rotationSpeed: 10
-  gravity: 9.81
-  aggroRange: 8
-  isAggroed: 0
-  attackRange: 2
-  attackCooldown: 2
-  attackDamage: 10
-  speedDampTime: 0.1
   banditRenderer: {fileID: 0}
 --- !u!143 &2116993646
 CharacterController:
@@ -121595,6 +121587,29 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1.2, z: 0}
+--- !u!136 &2116993647
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2116993642}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 1
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &2117916985
 PrefabInstance:
   m_ObjectHideFlags: 0
