@@ -10,6 +10,7 @@ public class BossHealthBarUI : MonoBehaviour
     public BossController bossController; 
 
     private bool isBarActive = false;
+    private bool isPlayerInZone = false;
 
     void Start()
     {
@@ -17,6 +18,11 @@ public class BossHealthBarUI : MonoBehaviour
         {
             healthBarContainer.SetActive(false); // Hide bar until boss awakens
         }
+    }
+
+    public void SetPlayerInZone(bool inZone)
+    {
+        isPlayerInZone = inZone;
     }
 
     void Update()
@@ -33,11 +39,23 @@ public class BossHealthBarUI : MonoBehaviour
 
         if (healthBarContainer == null) return;
 
-        // Show bar when boss wakes up
-        if (bossController.isAwakened && !isBarActive && !bossController.isDead)
+        // Show bar only when boss is awakened, alive, and player is inside trigger zone
+        if (bossController.isAwakened && isPlayerInZone && !bossController.isDead)
         {
-            isBarActive = true;
-            healthBarContainer.SetActive(true);
+            if (!isBarActive)
+            {
+                isBarActive = true;
+                healthBarContainer.SetActive(true);
+            }
+        }
+        else
+        {
+            // Hide bar if player leaves zone, boss dies, or health hits 0
+            if (isBarActive)
+            {
+                isBarActive = false;
+                healthBarContainer.SetActive(false);
+            }
         }
 
         // Smoothly update fill amounts based on boss health and stagger
@@ -55,12 +73,6 @@ public class BossHealthBarUI : MonoBehaviour
             {
                 float staggerPercentage = Mathf.Clamp01(bossController.currentStagger / bossController.maxStagger);
                 bossStaggerBarFill.fillAmount = Mathf.Lerp(bossStaggerBarFill.fillAmount, staggerPercentage, Time.deltaTime * 10f);
-            }
-
-            // Hide when boss dies or health drops to 0
-            if (bossController.currentHealth <= 0 || bossController.isDead)
-            {
-                healthBarContainer.SetActive(false);
             }
         }
     }

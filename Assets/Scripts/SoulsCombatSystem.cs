@@ -30,6 +30,25 @@ public class SoulsCombatSystem : MonoBehaviour
 
     public bool IsParryActive => isParrying && (parryTimer >= parryStartup) && (parryTimer <= (parryStartup + parryWindow));
 
+    [Header("Combat State")]
+    public float combatDetectionRadius = 15f;
+
+    // Returns true if locked on or if an enemy is within detection range
+    public bool isInCombat
+    {
+        get
+        {
+            if (isLockedOn && currentTarget != null) return true;
+
+            Collider[] hitColliders = Physics.OverlapSphere(transform.position, combatDetectionRadius);
+            foreach (Collider col in hitColliders)
+            {
+                if (col.CompareTag("Enemy")) return true;
+            }
+
+            return false;
+        }
+    }
 
     void Start()
     {

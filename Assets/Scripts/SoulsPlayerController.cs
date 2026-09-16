@@ -9,6 +9,8 @@ public class SoulsPlayerController : MonoBehaviour
     private Animator animator;
     private HUDPlayer hudPlayer;
 
+    private SoulsCombatSystem combatSystem;
+
     [Header("Movement Stats")]
     public float walkSpeed = 4f;
     public float runSpeed = 7.5f;
@@ -40,6 +42,7 @@ public class SoulsPlayerController : MonoBehaviour
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>();
         hudPlayer = GetComponent<HUDPlayer>();
+        combatSystem = GetComponent<SoulsCombatSystem>();
         camTransform = Camera.main != null ? Camera.main.transform : transform;
     }
 
@@ -47,8 +50,11 @@ public class SoulsPlayerController : MonoBehaviour
     {
         if (hudPlayer.isDead) return;
 
+        bool inCombat = combatSystem != null && combatSystem.isInCombat;
         bool isSprintingInput = Input.GetKey(KeyCode.LeftShift);
-        hudPlayer.RegenStamina(isSprintingInput || isRolling);
+
+        // Only count sprint as consuming stamina if the player is in combat
+        hudPlayer.RegenStamina((isSprintingInput && inCombat) || isRolling);
 
         if (isRolling)
         {
@@ -65,12 +71,21 @@ public class SoulsPlayerController : MonoBehaviour
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
 
-        bool isSprinting = Input.GetKey(KeyCode.LeftShift) && direction.magnitude > 0 && hudPlayer.HasStamina(2f);
+        bool inCombat = combatSystem != null && combatSystem.isInCombat;
+
+        // Out of combat allows sprinting without stamina requirements
+        bool hasStaminaToSprint = !inCombat || hudPlayer.HasStamina(2f);
+        bool isSprinting = Input.GetKey(KeyCode.LeftShift) && direction.magnitude > 0 && hasStaminaToSprint;
 
         if (isSprinting)
         {
             currentSpeed = runSpeed;
-            hudPlayer.ConsumeStamina(sprintStaminaCost * Time.deltaTime);
+            
+            // Only drain stamina if currently in combat
+            if (inCombat)
+            {
+                hudPlayer.ConsumeStamina(sprintStaminaCost * Time.deltaTime);
+            }
         }
         else
         {
@@ -94,8 +109,7 @@ public class SoulsPlayerController : MonoBehaviour
         {
             Vector3 moveDir = Quaternion.Euler(0f, camTransform.eulerAngles.y, 0f) * direction;
 
-            SoulsCombatSystem combat = GetComponent<SoulsCombatSystem>();
-            if (combat == null || !combat.isLockedOn)
+            if (combatSystem == null || !combatSystem.isLockedOn)
             {
                 float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + camTransform.eulerAngles.y;
                 float angle = Mathf.LerpAngle(transform.eulerAngles.y, targetAngle, rotationSpeed * Time.deltaTime);
