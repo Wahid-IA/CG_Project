@@ -5,12 +5,15 @@ public class PauseMenu : MonoBehaviour
 {
     [Header("UI & Camera References")]
     public GameObject pauseMenuUI;
-    public MonoBehaviour cameraScript; // Drag your CameraFollow script here
+    public MonoBehaviour cameraScript; 
 
     public static bool isPaused = false;
 
     void Update()
     {
+        // Do not trigger pause if still on main menu
+        if (InGameMainMenu.isMainMenuActive) return;
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (isPaused)
@@ -33,7 +36,6 @@ public class PauseMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        // Re-enable camera control
         if (cameraScript != null)
         {
             cameraScript.enabled = true;
@@ -49,7 +51,6 @@ public class PauseMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // Disable camera control while paused
         if (cameraScript != null)
         {
             cameraScript.enabled = false;
@@ -59,7 +60,9 @@ public class PauseMenu : MonoBehaviour
     public void LoadMainMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenu");
+        isPaused = false;
+        // Reloads the active scene to return to the sitting Start Menu state
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     public void QuitGame()

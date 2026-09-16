@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems; // Added to detect UI element clicks
 
 [RequireComponent(typeof(HUDPlayer))]
 public class SoulsCombatSystem : MonoBehaviour
@@ -22,9 +23,9 @@ public class SoulsCombatSystem : MonoBehaviour
 
     [Header("Parry Settings")]
     public float parryStaminaCost = 15f;
-    public float parryStartup = 0.533f/3f;   // Delay before active parry frames start
-    public float parryWindow = 0.5f/2f;    // Duration where parry is active
-    public float parryRecovery = 0.433f/1.25f;  // Cooldown after parry window ends
+    public float parryStartup = 0.533f / 3f;   
+    public float parryWindow = 0.5f / 2f;    
+    public float parryRecovery = 0.433f / 1.25f;  
     private float parryTimer = 0f;
     public bool isParrying { get; private set; } = false;
 
@@ -33,7 +34,6 @@ public class SoulsCombatSystem : MonoBehaviour
     [Header("Combat State")]
     public float combatDetectionRadius = 15f;
 
-    // Returns true if locked on or if an enemy is within detection range
     public bool isInCombat
     {
         get
@@ -60,6 +60,12 @@ public class SoulsCombatSystem : MonoBehaviour
     void Update()
     {
         if (hudPlayer.isDead) return;
+
+        // Prevent combat while on the Main Menu or during Pause
+        if (InGameMainMenu.isMainMenuActive || PauseMenu.isPaused) return;
+
+        // Prevent combat input when clicking UI buttons
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
         HandleTargetLock();
 
@@ -152,14 +158,12 @@ public class SoulsCombatSystem : MonoBehaviour
         {
             if (col.CompareTag("Enemy"))
             {
-                // Damage your original working boss
                 BossController boss = col.GetComponentInParent<BossController>();
                 if (boss != null)
                 {
                     boss.TakeDamage(attackDamage);
                 }
 
-                // Added support to damage the Bandit King
                 BanditBoss banditBoss = col.GetComponentInParent<BanditBoss>();
                 if (banditBoss != null)
                 {
