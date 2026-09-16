@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.EventSystems; // Added to detect UI element clicks
+using UnityEngine.EventSystems; 
 
 [RequireComponent(typeof(HUDPlayer))]
 public class SoulsCombatSystem : MonoBehaviour
@@ -61,17 +61,14 @@ public class SoulsCombatSystem : MonoBehaviour
     {
         if (hudPlayer.isDead) return;
 
-        // Prevent combat while on the Main Menu or during Pause
         if (InGameMainMenu.isMainMenuActive || PauseMenu.isPaused) return;
 
-        // Prevent combat input when clicking UI buttons
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
         HandleTargetLock();
 
         if (movementController != null && movementController.isRolling) return;
 
-        // Handle Parry Input (Right Click)
         if (Input.GetMouseButtonDown(1) && !isParrying)
         {
             PerformParry();
@@ -158,16 +155,25 @@ public class SoulsCombatSystem : MonoBehaviour
         {
             if (col.CompareTag("Enemy"))
             {
-                BossController boss = col.GetComponentInParent<BossController>();
-                if (boss != null)
-                {
-                    boss.TakeDamage(attackDamage);
-                }
-
+                // Check Bandit King / Boss
                 BanditBoss banditBoss = col.GetComponentInParent<BanditBoss>();
                 if (banditBoss != null)
                 {
                     banditBoss.TakeDamage(attackDamage);
+                }
+
+                // Check Regular Bandit
+                Bandit regularBandit = col.GetComponentInParent<Bandit>();
+                if (regularBandit != null)
+                {
+                    regularBandit.TakeDamage(attackDamage);
+                }
+
+                // Check General Boss Controller
+                BossController boss = col.GetComponentInParent<BossController>();
+                if (boss != null)
+                {
+                    boss.TakeDamage(attackDamage);
                 }
             }
         }

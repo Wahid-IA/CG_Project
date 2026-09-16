@@ -5,32 +5,51 @@ public class BanditHealthBarUI : MonoBehaviour
 {
     [Header("UI References")]
     public GameObject healthBarContainer; 
-    public Image banditBarFill; 
-    public Bandit banditScript; 
+    public Image bossBarFill; 
+    public Bandit banditScript; // Reference to the regular bandit script
+
+    private bool isBarActive = false;
 
     void Start()
     {
-        if (healthBarContainer != null) healthBarContainer.SetActive(false);
+        if (healthBarContainer != null)
+        {
+            healthBarContainer.SetActive(false); // Hide bar until damaged or engaged
+        }
     }
 
     void Update()
     {
-        if (banditScript == null || healthBarContainer == null) return;
-
-        // Show bar only when aggroed and alive
-        if (banditScript.isAggroed && !banditScript.isDead && banditScript.currentHealth > 0)
+        // Hide bar if bandit is destroyed or dead
+        if (banditScript == null || banditScript.isDead)
         {
-            if (!healthBarContainer.activeSelf) healthBarContainer.SetActive(true);
-
-            if (banditBarFill != null)
+            if (healthBarContainer != null && healthBarContainer.activeSelf)
             {
-                float healthPercentage = Mathf.Clamp01(banditScript.currentHealth / banditScript.maxHealth);
-                banditBarFill.fillAmount = Mathf.Lerp(banditBarFill.fillAmount, healthPercentage, Time.deltaTime * 10f);
+                healthBarContainer.SetActive(false);
             }
+            return;
         }
-        else
+
+        if (healthBarContainer == null) return;
+
+        // Show bar once health is reduced or combat starts
+        if (banditScript.currentHealth < banditScript.maxHealth && !isBarActive)
         {
-            if (healthBarContainer.activeSelf) healthBarContainer.SetActive(false);
+            isBarActive = true;
+            healthBarContainer.SetActive(true);
+        }
+
+        // Smoothly update fill amount
+        if (isBarActive && bossBarFill != null)
+        {
+            float healthPercentage = Mathf.Clamp01(banditScript.currentHealth / banditScript.maxHealth);
+            bossBarFill.fillAmount = Mathf.Lerp(bossBarFill.fillAmount, healthPercentage, Time.deltaTime * 10f);
+
+            // Hide when health drops to 0
+            if (banditScript.currentHealth <= 0)
+            {
+                healthBarContainer.SetActive(false);
+            }
         }
     }
 }
