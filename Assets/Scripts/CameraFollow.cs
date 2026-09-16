@@ -26,6 +26,9 @@ public class CameraFollow : MonoBehaviour
 
     void LateUpdate()
     {
+        // 1. Freeze camera movement completely while paused
+        if (PauseMenu.isPaused) return;
+
         if (target != null)
         {
             currentX += Input.GetAxis("Mouse X") * xSensitivity;
@@ -40,11 +43,6 @@ public class CameraFollow : MonoBehaviour
             transform.position = position;
         }
 
-        // Press Escape to unlock and reveal cursor
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-        }
+        // 2. Removed duplicate KeyCode.Escape check here so PauseMenu handles cursor toggling
     }
 }
