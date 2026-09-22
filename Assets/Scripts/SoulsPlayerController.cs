@@ -8,7 +8,6 @@ public class SoulsPlayerController : MonoBehaviour
     private Transform camTransform;
     private Animator animator;
     private HUDPlayer hudPlayer;
-
     private SoulsCombatSystem combatSystem;
 
     [Header("Movement Stats")]
@@ -21,7 +20,7 @@ public class SoulsPlayerController : MonoBehaviour
     [Header("Dodge Roll Settings")]
     public float rollSpeed = 8.25f;
     public float rollDuration = 0.55f;
-    [Tooltip("How long (in seconds) from the start of the roll the player is immune to damage.")]
+    [Tooltip("Immunity duration from roll start")]
     public float iFrameDuration = 0.35f; 
     public float rollStaminaCost = 25f;
     public float sprintStaminaCost = 15f;
@@ -30,7 +29,6 @@ public class SoulsPlayerController : MonoBehaviour
     private float rollTimer = 0f;
     private Vector3 rollDirection;
 
-    // Returns true if currently rolling and within the I-frame window
     public bool IsInvincible => isRolling && (rollDuration - rollTimer) <= iFrameDuration;
 
     [Header("Physics")]
@@ -48,13 +46,18 @@ public class SoulsPlayerController : MonoBehaviour
 
     void Update()
     {
-        if (hudPlayer.isDead) return;
+        if (hudPlayer != null && hudPlayer.isDead) return;
 
         bool inCombat = combatSystem != null && combatSystem.isInCombat;
         bool isSprintingInput = Input.GetKey(KeyCode.LeftShift);
 
-        // Only count sprint as consuming stamina if the player is in combat
         hudPlayer.RegenStamina((isSprintingInput && inCombat) || isRolling);
+
+        // Keep IsArmed state continuously synced with Animator
+        if (animator != null && combatSystem != null)
+        {
+            animator.SetBool("IsArmed", combatSystem.isArmed);
+        }
 
         if (isRolling)
         {
@@ -72,16 +75,12 @@ public class SoulsPlayerController : MonoBehaviour
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
 
         bool inCombat = combatSystem != null && combatSystem.isInCombat;
-
-        // Out of combat allows sprinting without stamina requirements
         bool hasStaminaToSprint = !inCombat || hudPlayer.HasStamina(2f);
         bool isSprinting = Input.GetKey(KeyCode.LeftShift) && direction.magnitude > 0 && hasStaminaToSprint;
 
         if (isSprinting)
         {
             currentSpeed = runSpeed;
-            
-            // Only drain stamina if currently in combat
             if (inCombat)
             {
                 hudPlayer.ConsumeStamina(sprintStaminaCost * Time.deltaTime);
@@ -98,6 +97,7 @@ public class SoulsPlayerController : MonoBehaviour
             animator.SetFloat("Speed", animSpeedTarget, speedDampTime, Time.deltaTime);
         }
 
+        // ROLL TRIGGER (Space Key)
         if (Input.GetKeyDown(KeyCode.Space) && hudPlayer.HasStamina(rollStaminaCost))
         {
             Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;

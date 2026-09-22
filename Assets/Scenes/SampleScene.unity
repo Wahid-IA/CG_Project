@@ -3250,6 +3250,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 98162b2336a414a458416c5d1558ba77, type: 2}
+    - target: {fileID: 5866666021909216657, guid: a76b566aebf3ee9428b921f7a02cd3c3, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -43988,8 +43992,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08da6bbabd62f634399334ee1ffc5cc1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SoulsCombatSystem
+  autoSheathDelay: 5
   lockRange: 15
   attackCooldown: 0.8
+  comboResetWindow: 1.2
   attackRange: 2.5
   attackRadius: 1.2
   attackDamage: 25
