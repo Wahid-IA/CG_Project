@@ -5,7 +5,7 @@ public class InGameMainMenu : MonoBehaviour
 {
     [Header("UI References")]
     public CanvasGroup mainMenuCanvasGroup; 
-    public GameObject hudContainer;        
+    public GameObject hudContainer;         
 
     [Header("Player Components")]
     public Transform playerTransform;
@@ -16,27 +16,19 @@ public class InGameMainMenu : MonoBehaviour
     public CameraFollow cameraFollowScript;
 
     [Header("Relative Camera Offsets (No fixed coordinates)")]
-    [Tooltip("Camera offset relative to player (X: Right/Left, Y: Up, Z: Forward)")]
     public Vector3 menuOffset = new Vector3(-1.8f, 1.2f, 2.5f); 
     public Vector3 lookAtOffset = new Vector3(0f, 1.0f, 0f);
 
     [Header("Transition Settings")]
     public float fadeDuration = 0.5f;
-    [Tooltip("Time allowed for stand up animation to finish before moving")]
     public float standUpDelay = 0.8f; 
-    [Tooltip("Combined duration for player turn/walk and camera blend (Lower = Faster)")]
     public float transitionDuration = 0.8f; 
 
     [Header("Walk & Movement Settings")]
-    [Tooltip("Degrees added to the turn angle (increase for a larger/sharper turn rotation)")]
     public float turnAngleOffset = 0f;
-    [Tooltip("Distance in meters the player walks forward while turning")]
     public float moveForwardDistance = 1.5f;
-    [Tooltip("Playback speed of the walking animation (1.2 = faster motion)")]
     public float turnAnimationSpeed = 1.2f;
-    [Tooltip("Name of the Bool parameter in Animator for movement (e.g. IsMoving, IsWalking)")]
     public string walkAnimBoolName = "IsMoving"; 
-    [Tooltip("Name of the Float parameter if your Animator uses Speed/Forward floats")]
     public string walkSpeedFloatName = "Speed";
     public float walkSpeedValue = 1.0f;
 
@@ -45,6 +37,12 @@ public class InGameMainMenu : MonoBehaviour
     void Start()
     {
         isMainMenuActive = true;
+
+        // Auto-assign Animator from character child if not assigned
+        if (playerAnimator == null && playerTransform != null)
+        {
+            playerAnimator = playerTransform.GetComponentInChildren<Animator>();
+        }
 
         // 1. Disable gameplay camera & player controls
         if (cameraFollowScript != null) cameraFollowScript.enabled = false;
@@ -85,6 +83,12 @@ public class InGameMainMenu : MonoBehaviour
 
     private IEnumerator StartGameSequence()
     {
+        // Re-verify Animator reference before playing transitions
+        if (playerAnimator == null && playerTransform != null)
+        {
+            playerAnimator = playerTransform.GetComponentInChildren<Animator>();
+        }
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
@@ -115,11 +119,9 @@ public class InGameMainMenu : MonoBehaviour
         // 3. Simultaneously rotate/walk player AND blend camera quickly
         if (playerTransform != null && Camera.main != null && cameraFollowScript != null)
         {
-            // Speed up animation playback
             if (playerAnimator != null) playerAnimator.speed = turnAnimationSpeed;
             SetWalkAnimation(true);
 
-            // Initial player & camera states
             Quaternion playerStartRot = playerTransform.rotation;
             Quaternion playerTargetRot = Quaternion.Euler(0f, Camera.main.transform.eulerAngles.y + turnAngleOffset, 0f);
 
@@ -134,17 +136,13 @@ public class InGameMainMenu : MonoBehaviour
                 float t = elapsedTime / transitionDuration;
                 float smoothT = Mathf.SmoothStep(0f, 1f, t);
 
-                // A. Rotate player towards target direction
                 playerTransform.rotation = Quaternion.Slerp(playerStartRot, playerTargetRot, smoothT);
 
-                // B. Translate player forward along facing vector
                 float moveStep = (moveForwardDistance / transitionDuration) * Time.deltaTime;
                 playerTransform.position += playerTransform.forward * moveStep;
 
-                // C. Calculate updated gameplay camera position dynamically behind player
                 Vector3 currentGameplayCamPos = (playerTransform.position + cameraFollowScript.targetOffset) - (camTargetRot * Vector3.forward * cameraFollowScript.distance);
 
-                // D. Blend camera towards target position & rotation smoothly
                 Camera.main.transform.position = Vector3.Lerp(camStartPos, currentGameplayCamPos, smoothT);
                 Camera.main.transform.rotation = Quaternion.Slerp(camStartRot, camTargetRot, smoothT);
 
@@ -153,7 +151,6 @@ public class InGameMainMenu : MonoBehaviour
 
             playerTransform.rotation = playerTargetRot;
 
-            // Stop Walk Animation and restore normal animator speed
             SetWalkAnimation(false);
             if (playerAnimator != null) playerAnimator.speed = 1.0f;
         }
