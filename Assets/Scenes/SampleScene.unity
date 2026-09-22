@@ -59368,9 +59368,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c1ba51aaf30303e49abe16c33c840d59, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BanditHealthBarUI
-  healthBarContainer: {fileID: 0}
-  bossBarFill: {fileID: 0}
-  banditScript: {fileID: 0}
 --- !u!1001 &1048281335
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -96780,7 +96777,7 @@ Transform:
   m_GameObject: {fileID: 1719765471}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.16, y: 1.791, z: -30.43}
+  m_LocalPosition: {x: 204.7, y: 2.082, z: -207.83}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
