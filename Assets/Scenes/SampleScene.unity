@@ -10185,7 +10185,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5897617319075692783, guid: 5cc20c26dcab02e419b4363286cb7755, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 151.55554
+      value: 152.4
       objectReference: {fileID: 0}
     - target: {fileID: 5897617319075692783, guid: 5cc20c26dcab02e419b4363286cb7755, type: 3}
       propertyPath: m_LocalPosition.y
@@ -10193,7 +10193,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5897617319075692783, guid: 5cc20c26dcab02e419b4363286cb7755, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 57.28607
+      value: 55.55
       objectReference: {fileID: 0}
     - target: {fileID: 5897617319075692783, guid: 5cc20c26dcab02e419b4363286cb7755, type: 3}
       propertyPath: m_LocalRotation.w
@@ -22671,68 +22671,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7602580702352201991, guid: 9f134c444ab917644959b0bd931ad1d8, type: 3}
   m_PrefabInstance: {fileID: 370044790}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &373795114
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 978450386}
-    m_Modifications:
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 157.97
-      objectReference: {fileID: 0}
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.84
-      objectReference: {fileID: 0}
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 60.25
-      objectReference: {fileID: 0}
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.84795487
-      objectReference: {fileID: 0}
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 7.1054274e-15
-      objectReference: {fileID: 0}
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.5300684
-      objectReference: {fileID: 0}
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -3.5527137e-15
-      objectReference: {fileID: 0}
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7735888920772564575, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-      propertyPath: m_Name
-      value: Fence_Spikes_2 Variant (24)
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
---- !u!4 &373795115 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6922231983312932069, guid: 03ba2b516e07e5d48ab3e062d9b21f1e, type: 3}
-  m_PrefabInstance: {fileID: 373795114}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &376656282
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31144,7 +31082,7 @@ MonoBehaviour:
   menuLocalOffset: {x: 0.51, y: 0.32, z: 0.21}
   lookAtLocalOffset: {x: -15.4, y: -1.29, z: -8.64}
   fadeDuration: 1
-  transitionDuration: 2.4
+  transitionDuration: 1.8
   transitionCurve:
     serializedVersion: 2
     m_Curve:
@@ -36323,7 +36261,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1984715544371350458, guid: b0cc384fc33e3f34b8435a35946681f2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 152.63994
+      value: 144.21
       objectReference: {fileID: 0}
     - target: {fileID: 1984715544371350458, guid: b0cc384fc33e3f34b8435a35946681f2, type: 3}
       propertyPath: m_LocalPosition.y
@@ -36331,7 +36269,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1984715544371350458, guid: b0cc384fc33e3f34b8435a35946681f2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 57.22715
+      value: 74.53
       objectReference: {fileID: 0}
     - target: {fileID: 1984715544371350458, guid: b0cc384fc33e3f34b8435a35946681f2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -43200,7 +43138,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 816335006794189046, guid: 507ecbb605902ba49b2ece06f6941ed9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 146.7885
+      value: 145.97
       objectReference: {fileID: 0}
     - target: {fileID: 816335006794189046, guid: 507ecbb605902ba49b2ece06f6941ed9, type: 3}
       propertyPath: m_LocalPosition.y
@@ -43208,7 +43146,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 816335006794189046, guid: 507ecbb605902ba49b2ece06f6941ed9, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 57.10794
+      value: 58.8
       objectReference: {fileID: 0}
     - target: {fileID: 816335006794189046, guid: 507ecbb605902ba49b2ece06f6941ed9, type: 3}
       propertyPath: m_LocalRotation.w
@@ -44194,7 +44132,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88864143232bad6428f253c0f128dd5b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EldenRingHUDPlayer
-  maxHealth: 100
+  maxHealth: 100000
   currentHealth: 0
   healthFillImage: {fileID: 1903849077}
   maxStamina: 100
@@ -55403,7 +55341,6 @@ Transform:
   - {fileID: 11352746}
   - {fileID: 478068285}
   - {fileID: 416700454}
-  - {fileID: 373795115}
   - {fileID: 1752424137}
   - {fileID: 1906267508}
   - {fileID: 2134778940}
