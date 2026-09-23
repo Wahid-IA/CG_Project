@@ -15,30 +15,34 @@ public class InGameMainMenu : MonoBehaviour
     [Header("Camera Components")]
     public CameraFollow cameraFollowScript;
 
-    [Header("Relative Camera Offsets (No fixed coordinates)")]
-    public Vector3 menuOffset = new Vector3(-1.8f, 1.2f, 2.5f); 
-    public Vector3 lookAtOffset = new Vector3(0f, 1.0f, 0f);
+    [Header("Local Camera Framing (Over-the-Shoulder)")]
+    [Tooltip("Camera position relative to player local space (X = side, Y = height, Z = distance behind).")]
+    public Vector3 menuLocalOffset = new Vector3(-0.8f, 1.5f, -2.2f); 
+    
+    [Tooltip("Point the camera looks at relative to player local space.")]
+    public Vector3 lookAtLocalOffset = new Vector3(0.5f, 1.2f, 3.0f);
 
     [Header("Transition Settings")]
-    public float fadeDuration = 0.5f;
-    public float standUpDelay = 0.8f; 
-    public float transitionDuration = 0.8f; 
+    public float fadeDuration = 0.4f;
+    public float standUpDelay = 0.6f; 
+    public float transitionDuration = 1.0f; 
 
-    [Header("Walk & Movement Settings")]
+    [Header("Walk & Stand Settings")]
     public float turnAngleOffset = 0f;
-    public float moveForwardDistance = 1.5f;
-    public float turnAnimationSpeed = 1.2f;
+    public float moveForwardDistance = 0.8f;
     public string walkAnimBoolName = "IsMoving"; 
     public string walkSpeedFloatName = "Speed";
     public float walkSpeedValue = 1.0f;
 
     public static bool isMainMenuActive = true;
 
+    private Camera mainCam;
+
     void Start()
     {
         isMainMenuActive = true;
+        mainCam = Camera.main;
 
-        // Auto-assign Animator from character child if not assigned
         if (playerAnimator == null && playerTransform != null)
         {
             playerAnimator = playerTransform.GetComponentInChildren<Animator>();
@@ -49,17 +53,7 @@ public class InGameMainMenu : MonoBehaviour
         if (playerControllerScript != null) playerControllerScript.enabled = false;
         if (hudContainer != null) hudContainer.SetActive(false);
 
-        // 2. Position camera relative to player
-        if (playerTransform != null && Camera.main != null)
-        {
-            Vector3 dynamicMenuPos = playerTransform.position + menuOffset;
-            Vector3 lookTarget = playerTransform.position + lookAtOffset;
-
-            Camera.main.transform.position = dynamicMenuPos;
-            Camera.main.transform.rotation = Quaternion.LookRotation(lookTarget - dynamicMenuPos);
-        }
-
-        // 3. Setup UI & Cursor
+        // 2. Setup UI & Cursor
         if (mainMenuCanvasGroup != null)
         {
             mainMenuCanvasGroup.gameObject.SetActive(true);
@@ -69,11 +63,35 @@ public class InGameMainMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // 4. Trigger Sitting Pose
+        // 3. Trigger Sitting Pose
         if (playerAnimator != null)
         {
             playerAnimator.SetBool("IsSitting", true);
         }
+
+        // Initial camera snap
+        PositionMenuCamera();
+    }
+
+    void LateUpdate()
+    {
+        // Continuously update camera during main menu to track physics/animations correctly
+        if (isMainMenuActive && playerTransform != null)
+        {
+            PositionMenuCamera();
+        }
+    }
+
+    private void PositionMenuCamera()
+    {
+        if (playerTransform == null || mainCam == null) return;
+
+        // Calculate unscaled offsets so object scale doesn't distort camera position
+        Vector3 menuWorldPos = playerTransform.position + (playerTransform.rotation * menuLocalOffset);
+        Vector3 lookWorldTarget = playerTransform.position + (playerTransform.rotation * lookAtLocalOffset);
+
+        mainCam.transform.position = menuWorldPos;
+        mainCam.transform.rotation = Quaternion.LookRotation(lookWorldTarget - menuWorldPos);
     }
 
     public void OnStartGameClicked()
@@ -83,7 +101,8 @@ public class InGameMainMenu : MonoBehaviour
 
     private IEnumerator StartGameSequence()
     {
-        // Re-verify Animator reference before playing transitions
+        isMainMenuActive = false; // Stop LateUpdate positioning override
+
         if (playerAnimator == null && playerTransform != null)
         {
             playerAnimator = playerTransform.GetComponentInChildren<Animator>();
@@ -92,7 +111,7 @@ public class InGameMainMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
-        // 1. Fade out UI
+        // 1. Fade out UI Panel
         float elapsedTime = 0f;
         while (elapsedTime < fadeDuration)
         {
@@ -106,28 +125,25 @@ public class InGameMainMenu : MonoBehaviour
 
         if (mainMenuCanvasGroup != null) mainMenuCanvasGroup.gameObject.SetActive(false);
 
-        // 2. Trigger Stand Up Animation FIRST
+        // 2. Trigger Stand Up Animation
         if (playerAnimator != null)
         {
             playerAnimator.SetBool("IsSitting", false);
             playerAnimator.SetTrigger("StandUp");
         }
 
-        // Wait for stand up animation to finish before transition
         yield return new WaitForSeconds(standUpDelay);
 
-        // 3. Simultaneously rotate/walk player AND blend camera quickly
-        if (playerTransform != null && Camera.main != null && cameraFollowScript != null)
+        // 3. Blend camera smoothly to gameplay position
+        if (playerTransform != null && mainCam != null && cameraFollowScript != null)
         {
-            if (playerAnimator != null) playerAnimator.speed = turnAnimationSpeed;
             SetWalkAnimation(true);
 
-            Quaternion playerStartRot = playerTransform.rotation;
-            Quaternion playerTargetRot = Quaternion.Euler(0f, Camera.main.transform.eulerAngles.y + turnAngleOffset, 0f);
+            Vector3 camStartPos = mainCam.transform.position;
+            Quaternion camStartRot = mainCam.transform.rotation;
 
-            Vector3 camStartPos = Camera.main.transform.position;
-            Quaternion camStartRot = Camera.main.transform.rotation;
-            Quaternion camTargetRot = Quaternion.Euler(15f, playerTargetRot.eulerAngles.y, 0f);
+            Quaternion playerStartRot = playerTransform.rotation;
+            Quaternion playerTargetRot = Quaternion.Euler(0f, playerTransform.eulerAngles.y + turnAngleOffset, 0f);
 
             elapsedTime = 0f;
             while (elapsedTime < transitionDuration)
@@ -136,31 +152,48 @@ public class InGameMainMenu : MonoBehaviour
                 float t = elapsedTime / transitionDuration;
                 float smoothT = Mathf.SmoothStep(0f, 1f, t);
 
+                // Smooth player turn
                 playerTransform.rotation = Quaternion.Slerp(playerStartRot, playerTargetRot, smoothT);
 
-                float moveStep = (moveForwardDistance / transitionDuration) * Time.deltaTime;
-                playerTransform.position += playerTransform.forward * moveStep;
+                // Forward step movement
+                if (moveForwardDistance > 0f)
+                {
+                    float moveStep = (moveForwardDistance / transitionDuration) * Time.deltaTime;
+                    playerTransform.position += playerTransform.forward * moveStep;
+                }
 
-                Vector3 currentGameplayCamPos = (playerTransform.position + cameraFollowScript.targetOffset) - (camTargetRot * Vector3.forward * cameraFollowScript.distance);
+                // Blend camera toward cameraFollowScript position
+                Vector3 gameplayTargetPos = GetGameplayCameraPosition();
+                Quaternion gameplayTargetRot = GetGameplayCameraRotation();
 
-                Camera.main.transform.position = Vector3.Lerp(camStartPos, currentGameplayCamPos, smoothT);
-                Camera.main.transform.rotation = Quaternion.Slerp(camStartRot, camTargetRot, smoothT);
+                mainCam.transform.position = Vector3.Lerp(camStartPos, gameplayTargetPos, smoothT);
+                mainCam.transform.rotation = Quaternion.Slerp(camStartRot, gameplayTargetRot, smoothT);
 
                 yield return null;
             }
 
-            playerTransform.rotation = playerTargetRot;
-
             SetWalkAnimation(false);
-            if (playerAnimator != null) playerAnimator.speed = 1.0f;
         }
 
-        // 4. Enable Gameplay Control
+        // 4. Enable gameplay controls
         if (cameraFollowScript != null) cameraFollowScript.enabled = true;
         if (playerControllerScript != null) playerControllerScript.enabled = true;
         if (hudContainer != null) hudContainer.SetActive(true);
+    }
 
-        isMainMenuActive = false;
+    private Vector3 GetGameplayCameraPosition()
+    {
+        if (cameraFollowScript == null || playerTransform == null) return mainCam.transform.position;
+
+        Quaternion rotation = Quaternion.Euler(15f, playerTransform.eulerAngles.y, 0f);
+        Vector3 targetPosition = playerTransform.position + cameraFollowScript.targetOffset;
+        return targetPosition - (rotation * Vector3.forward * cameraFollowScript.distance);
+    }
+
+    private Quaternion GetGameplayCameraRotation()
+    {
+        if (playerTransform == null) return mainCam.transform.rotation;
+        return Quaternion.Euler(15f, playerTransform.eulerAngles.y, 0f);
     }
 
     private void SetWalkAnimation(bool isWalking)
