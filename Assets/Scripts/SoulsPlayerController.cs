@@ -53,7 +53,6 @@ public class SoulsPlayerController : MonoBehaviour
 
         hudPlayer.RegenStamina((isSprintingInput && inCombat) || isRolling);
 
-        // Keep IsArmed state continuously synced with Animator
         if (animator != null && combatSystem != null)
         {
             animator.SetBool("IsArmed", combatSystem.isArmed);
@@ -73,6 +72,26 @@ public class SoulsPlayerController : MonoBehaviour
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
         Vector3 direction = new Vector3(horizontal, 0f, vertical).normalized;
+
+        // --- 1. ROLL INPUT (Evaluated FIRST to enable roll-canceling mid-attack) ---
+        if (Input.GetKeyDown(KeyCode.Space) && hudPlayer.HasStamina(rollStaminaCost))
+        {
+            Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;
+            StartRoll(rollInput);
+            return;
+        }
+
+        // --- 2. ACTION LOCK (Prevents regular movement while attacking/blocking) ---
+        if (combatSystem != null && combatSystem.IsPerformingAction)
+        {
+            if (animator != null)
+            {
+                animator.SetFloat("Speed", 0f, speedDampTime, Time.deltaTime);
+            }
+
+            ApplyGravity();
+            return;
+        }
 
         bool inCombat = combatSystem != null && combatSystem.isInCombat;
         bool hasStaminaToSprint = !inCombat || hudPlayer.HasStamina(2f);
@@ -97,14 +116,6 @@ public class SoulsPlayerController : MonoBehaviour
             animator.SetFloat("Speed", animSpeedTarget, speedDampTime, Time.deltaTime);
         }
 
-        // ROLL TRIGGER (Space Key)
-        if (Input.GetKeyDown(KeyCode.Space) && hudPlayer.HasStamina(rollStaminaCost))
-        {
-            Vector3 rollInput = direction.magnitude > 0 ? direction : transform.forward;
-            StartRoll(rollInput);
-            return;
-        }
-
         if (direction.magnitude >= 0.1f)
         {
             Vector3 moveDir = Quaternion.Euler(0f, camTransform.eulerAngles.y, 0f) * direction;
@@ -119,6 +130,11 @@ public class SoulsPlayerController : MonoBehaviour
             controller.Move(moveDir.normalized * currentSpeed * Time.deltaTime);
         }
 
+        ApplyGravity();
+    }
+
+    void ApplyGravity()
+    {
         if (controller.isGrounded && velocity.y < 0) velocity.y = -2f;
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
@@ -127,6 +143,12 @@ public class SoulsPlayerController : MonoBehaviour
     void StartRoll(Vector3 inputDir)
     {
         if (!hudPlayer.ConsumeStamina(rollStaminaCost)) return;
+
+        // Cancel any pending/active attack or parry
+        if (combatSystem != null)
+        {
+            combatSystem.CancelActions();
+        }
 
         isRolling = true;
         rollTimer = rollDuration;

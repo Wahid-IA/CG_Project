@@ -8,11 +8,8 @@ public class SoulsCombatSystem : MonoBehaviour
     private Animator animator;
     private SoulsPlayerController movementController;
 
-    [Header("Stance & Sheath Settings")]
-    public bool isArmed { get; private set; } = false;
-    [Tooltip("Seconds of inactivity out of combat before auto-sheathing")]
-    public float autoSheathDelay = 5.0f; 
-    private float lastCombatInputTime;
+    [Header("Stance Settings")]
+    public bool isArmed { get; private set; } = true;
 
     [Header("Target Lock")]
     public float lockRange = 15f;
@@ -40,6 +37,36 @@ public class SoulsCombatSystem : MonoBehaviour
 
     public bool IsParryActive => isParrying && (parryTimer >= parryStartup) && (parryTimer <= (parryStartup + parryWindow));
 
+    public bool IsPerformingAction
+    {
+        get
+        {
+            if (isParrying) return true;
+            if (animator == null) return false;
+
+            AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
+
+            if (animator.IsInTransition(0))
+            {
+                AnimatorStateInfo nextState = animator.GetNextAnimatorStateInfo(0);
+                return IsActionState(currentState) || IsActionState(nextState);
+            }
+
+            return IsActionState(currentState) && currentState.normalizedTime < 0.95f;
+        }
+    }
+
+    private bool IsActionState(AnimatorStateInfo state)
+    {
+        return state.IsTag("Attack") || state.IsTag("Block") ||
+               state.IsName("sword and shield slash") ||
+               state.IsName("sword and shield slash 3") ||
+               state.IsName("sword and shield slash 4") ||
+               state.IsName("Attack State") ||
+               state.IsName("Shield_Block_Enter") ||
+               state.IsName("Sword_Block_Exit");
+    }
+
     [Header("Combat State")]
     public float combatDetectionRadius = 15f;
 
@@ -65,11 +92,7 @@ public class SoulsCombatSystem : MonoBehaviour
         animator = GetComponentInChildren<Animator>();
         movementController = GetComponent<SoulsPlayerController>();
         
-        // Ensure starting state is unarmed
-        if (animator != null)
-        {
-            animator.SetBool("IsArmed", false);
-        }
+        isArmed = true;
     }
 
     void Update()
@@ -79,13 +102,10 @@ public class SoulsCombatSystem : MonoBehaviour
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
 
         HandleTargetLock();
-        HandleAutoSheathTimer();
 
-        // Prevent attacking/blocking while rolling
         if (movementController != null && movementController.isRolling) return;
 
-        // RIGHT CLICK: Perform Shield Block / Parry (Requires weapon drawn)
-        if (Input.GetMouseButtonDown(1) && !isParrying && isArmed)
+        if (Input.GetMouseButtonDown(1) && !IsPerformingAction)
         {
             PerformShieldBlock();
         }
@@ -104,24 +124,14 @@ public class SoulsCombatSystem : MonoBehaviour
 
     void HandleCombatInput()
     {
-        // Reset combo count if too much time passes between clicks
         if (Time.time - lastAttackTime > comboResetWindow && currentCombo > 0)
         {
             currentCombo = 0;
             if (animator != null) animator.SetInteger("Combo", 0);
         }
 
-        // LEFT CLICK: Draw weapon on 1st press, Attack combo on subsequent presses
         if (Input.GetMouseButtonDown(0))
         {
-            lastCombatInputTime = Time.time;
-
-            if (!isArmed)
-            {
-                DrawWeapon();
-                return;
-            }
-
             if (Time.time >= lastAttackTime + attackCooldown && hudPlayer.HasStamina(attackStaminaCost))
             {
                 PerformMeleeAttack();
@@ -129,37 +139,15 @@ public class SoulsCombatSystem : MonoBehaviour
         }
     }
 
-    public void DrawWeapon()
+    public void CancelActions()
     {
-        isArmed = true;
-        lastCombatInputTime = Time.time;
+        isParrying = false;
+        parryTimer = 0f;
 
         if (animator != null)
         {
-            animator.SetBool("IsArmed", true);
-            animator.SetTrigger("Draw");
-        }
-    }
-
-    public void SheathWeapon()
-    {
-        isArmed = false;
-        currentCombo = 0;
-
-        if (animator != null)
-        {
-            animator.SetBool("IsArmed", false);
-            animator.SetInteger("Combo", 0);
-            animator.SetTrigger("Sheath");
-        }
-    }
-
-    void HandleAutoSheathTimer()
-    {
-        // Auto-sheath when idle and out of combat
-        if (isArmed && !isInCombat && (Time.time - lastCombatInputTime > autoSheathDelay))
-        {
-            SheathWeapon();
+            animator.ResetTrigger("Attack");
+            animator.ResetTrigger("Parry");
         }
     }
 
@@ -168,7 +156,7 @@ public class SoulsCombatSystem : MonoBehaviour
         if (!hudPlayer.ConsumeStamina(attackStaminaCost)) return;
 
         lastAttackTime = Time.time;
-        currentCombo = (currentCombo % 3) + 1; // Cycles 1 -> 2 -> 3
+        currentCombo = (currentCombo % 3) + 1;
 
         if (animator != null)
         {
@@ -201,7 +189,6 @@ public class SoulsCombatSystem : MonoBehaviour
 
         isParrying = true;
         parryTimer = 0f;
-        lastCombatInputTime = Time.time;
 
         if (animator != null)
         {
@@ -213,7 +200,6 @@ public class SoulsCombatSystem : MonoBehaviour
     {
         if (animator != null)
         {
-            animator.SetBool("IsArmed", isArmed);
             animator.SetTrigger("Die");
         }
     }
