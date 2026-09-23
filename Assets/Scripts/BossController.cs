@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -12,7 +13,7 @@ public class BossController : MonoBehaviour
     public float currentHealth;
     public float moveSpeed = 4f;        
     public float rotationSpeed = 10f;
-    public float gravity = 9.81f; // Added for ground snapping
+    public float gravity = 9.81f; 
     public bool isDead { get; private set; } = false;
 
     [Header("Combat Settings")]
@@ -25,8 +26,8 @@ public class BossController : MonoBehaviour
     public float maxStagger = 100f;
     public float currentStagger = 0f;
     public float defaultStaggerPerHit = 25f;
-    public float staggerDecayRate = 5f; // Drains stagger slowly if player stops attacking
-    public float staggerDuration = 3f;  // Stun length in seconds
+    public float staggerDecayRate = 5f; 
+    public float staggerDuration = 3f;  
     public bool isStaggered { get; private set; } = false;
     private float staggerTimer = 0f;
 
@@ -40,28 +41,22 @@ public class BossController : MonoBehaviour
     [Header("Visuals")]
     public Renderer bossRenderer;
 
-    // --- Added for physics movement ---
     private CharacterController controller;
     private float verticalVelocity = 0f;
+
+    // --- Non-Repeating Deck Tracking System ---
+    private int lastAttackIndex = -1;
+    private bool hasTriggeredPhase2Jump = false;
+    private List<int> phase1Bag = new List<int>();
+    private List<int> phase2Bag = new List<int>();
 
     void Start()
     {
         currentHealth = maxHealth;
         animator = GetComponentInChildren<Animator>();
-        
-        // Initialize Character Controller
         controller = GetComponent<CharacterController>();
 
-        if (playerTransform == null)
-        {
-            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null) playerTransform = playerObj.transform;
-        }
-
-        if (playerTransform != null)
-        {
-            playerScript = playerTransform.GetComponent<HUDPlayer>();
-        }
+        FindPlayerReference();
 
         if (bossRenderer == null)
         {
@@ -73,60 +68,79 @@ public class BossController : MonoBehaviour
     {
         if (isDead) return;
 
-        // 1. Calculate Gravity continuously
+        // Keep player reference updated
+        if (playerScript == null)
+        {
+            FindPlayerReference();
+        }
+
+        // --- IMMEDIATELY HALT EVERYTHING IF PLAYER IS DEAD OR MISSING ---
+        if (playerScript == null || playerScript.isDead)
+        {
+            StopAttackingAndMovement();
+            ApplyGravityOnly();
+            return;
+        }
+
+        // Continuous Gravity
         if (controller.isGrounded && verticalVelocity < 0)
         {
-            verticalVelocity = -2f; // Snaps boss to slopes
+            verticalVelocity = -2f; 
         }
         else
         {
             verticalVelocity -= gravity * Time.deltaTime;
         }
 
-        // Handle Staggered/Stunned State (Disables movement & attacks)
+        // Handle Stagger State
         if (isStaggered)
         {
             staggerTimer -= Time.deltaTime;
-            UpdateAnimationSpeed(0f); // Freeze movement during stagger
-
-            // Apply gravity even while staggered so they don't hover
-            controller.Move(new Vector3(0, verticalVelocity, 0) * Time.deltaTime);
+            StopAttackingAndMovement();
+            ApplyGravityOnly();
 
             if (staggerTimer <= 0f)
             {
                 isStaggered = false;
-                currentStagger = 0f; // Reset meter after recovery
+                currentStagger = 0f; 
 
-                // Stop playing looping stagger animation
                 if (animator != null)
                 {
-                    animator.SetBool("IsStagger", false); // Matched to 'IsStagger'
+                    animator.SetBool("IsStagger", false); 
                 }
             }
-            return; // Block AI movement and attacks while staggered
+            return; 
         }
 
-        // Slowly decay stagger meter if player stops attacking
+        // Stagger Decay
         if (currentStagger > 0f)
         {
             currentStagger = Mathf.Clamp(currentStagger - staggerDecayRate * Time.deltaTime, 0f, maxStagger);
         }
 
-        if (playerScript == null && playerTransform != null)
+        if (!isAwakened || playerTransform == null) 
         {
-            playerScript = playerTransform.GetComponent<HUDPlayer>();
+            StopAttackingAndMovement();
+            ApplyGravityOnly();
+            return;
         }
 
-        if (!isAwakened || playerTransform == null || (playerScript != null && playerScript.isDead)) 
+        // --- MID-ATTACK LOCK ---
+        // If boss is currently performing an attack animation, freeze movement and clear triggers
+        if (IsAttacking())
         {
+            if (animator != null)
+            {
+                animator.ResetTrigger("Attack");
+            }
             UpdateAnimationSpeed(0f);
-            // Apply gravity while asleep
-            controller.Move(new Vector3(0, verticalVelocity, 0) * Time.deltaTime);
+            ApplyGravityOnly();
             return;
         }
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
+        // Face towards Player
         Vector3 dirToPlayer = (playerTransform.position - transform.position).normalized;
         dirToPlayer.y = 0;
         if (dirToPlayer != Vector3.zero)
@@ -135,25 +149,197 @@ public class BossController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, rotationSpeed * Time.deltaTime);
         }
 
-        float targetAnimSpeed = 0f;
         Vector3 moveVelocity = Vector3.zero;
+        float targetAnimSpeed = 0f;
 
+        // --- DISTANCE CHECK & COMBAT LOGIC ---
         if (distanceToPlayer > attackRange)
         {
-            // 2. Set horizontal movement direction instead of forcing transform.position
+            // Player is out of attack range: Move closer, ensure attack triggers & indices are cleared
+            if (animator != null)
+            {
+                animator.ResetTrigger("Attack");
+                animator.SetInteger("AttackIndex", 0);
+            }
+
             moveVelocity = dirToPlayer * moveSpeed;
             targetAnimSpeed = 1f;
         }
-        else if (Time.time >= lastAttackTime + attackCooldown)
+        else
         {
-            PerformBossAttack();
+            // Player is within attack range: Stop moving and attempt attack if cooldown is ready
+            targetAnimSpeed = 0f;
+
+            if (Time.time >= lastAttackTime + attackCooldown)
+            {
+                PerformBossAttack();
+                return;
+            }
         }
 
-        // 3. Combine horizontal movement and gravity, then execute move
         moveVelocity.y = verticalVelocity;
         controller.Move(moveVelocity * Time.deltaTime);
 
         UpdateAnimationSpeed(targetAnimSpeed);
+    }
+
+    void FindPlayerReference()
+    {
+        if (playerTransform == null)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null) playerTransform = playerObj.transform;
+        }
+
+        if (playerTransform != null)
+        {
+            playerScript = playerTransform.GetComponent<HUDPlayer>() ??
+                           playerTransform.GetComponentInParent<HUDPlayer>() ?? 
+                           playerTransform.GetComponentInChildren<HUDPlayer>();
+        }
+
+        if (playerScript == null)
+        {
+            playerScript = FindFirstObjectByType<HUDPlayer>();
+        }
+    }
+
+    void ApplyGravityOnly()
+    {
+        if (controller != null && controller.enabled)
+        {
+            controller.Move(new Vector3(0, verticalVelocity, 0) * Time.deltaTime);
+        }
+    }
+
+    void StopAttackingAndMovement()
+    {
+        UpdateAnimationSpeed(0f);
+        if (animator != null)
+        {
+            animator.ResetTrigger("Attack");
+            animator.SetInteger("AttackIndex", 0);
+        }
+    }
+
+    void PerformBossAttack()
+    {
+        if (playerScript == null || playerScript.isDead) return;
+        if (IsAttacking()) return;
+
+        lastAttackTime = Time.time;
+        int attackIndex = ChooseNextAttack();
+
+        if (animator != null)
+        {
+            animator.ResetTrigger("Attack");
+            animator.SetInteger("AttackIndex", attackIndex);
+            animator.SetTrigger("Attack");
+        }
+
+        if (playerScript != null && !playerScript.isDead)
+        {
+            playerScript.TakeDamage(attackDamage, gameObject);
+        }
+    }
+
+    private bool IsAttacking()
+    {
+        if (animator == null) return false;
+
+        AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
+
+        if (animator.IsInTransition(0))
+        {
+            AnimatorStateInfo nextState = animator.GetNextAnimatorStateInfo(0);
+            if (IsAttackState(currentState) || IsAttackState(nextState))
+            {
+                return true;
+            }
+        }
+        else if (IsAttackState(currentState))
+        {
+            if (currentState.normalizedTime < 0.95f)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsAttackState(AnimatorStateInfo stateInfo)
+    {
+        return stateInfo.IsTag("Attack") ||
+               stateInfo.IsName("One Hand Club Combo") || 
+               stateInfo.IsName("Standing Melee Combat") || 
+               stateInfo.IsName("Dual Weapon Combo") || 
+               stateInfo.IsName("Jump Attack");
+    }
+
+    private int ChooseNextAttack()
+    {
+        bool isPhase2 = (currentHealth / maxHealth) <= 0.5f;
+
+        // Guaranteed Jump Attack (4) ONCE when dropping <= 50% HP
+        if (isPhase2 && !hasTriggeredPhase2Jump)
+        {
+            hasTriggeredPhase2Jump = true;
+            lastAttackIndex = 4;
+            phase2Bag.Clear();
+            return 4;
+        }
+
+        // --- PHASE 1 LOGIC (> 50% HP) ---
+        if (!isPhase2)
+        {
+            if (phase1Bag.Count == 0)
+            {
+                phase1Bag.Add(1);
+                phase1Bag.Add(2);
+            }
+
+            int pickIndex = Random.Range(0, phase1Bag.Count);
+            if (phase1Bag.Count > 1 && phase1Bag[pickIndex] == lastAttackIndex)
+            {
+                pickIndex = (pickIndex + 1) % phase1Bag.Count;
+            }
+
+            int chosen = phase1Bag[pickIndex];
+            phase1Bag.RemoveAt(pickIndex);
+            lastAttackIndex = chosen;
+            return chosen;
+        }
+
+        // --- PHASE 2 LOGIC (<= 50% HP) ---
+        if (phase2Bag.Count == 0)
+        {
+            if (lastAttackIndex != 4)
+            {
+                lastAttackIndex = 4;
+                phase2Bag.Add(1);
+                phase2Bag.Add(2);
+                phase2Bag.Add(3);
+                return 4;
+            }
+            else
+            {
+                phase2Bag.Add(1);
+                phase2Bag.Add(2);
+                phase2Bag.Add(3);
+            }
+        }
+
+        int pIndex = Random.Range(0, phase2Bag.Count);
+        if (phase2Bag.Count > 1 && phase2Bag[pIndex] == lastAttackIndex)
+        {
+            pIndex = (pIndex + 1) % phase2Bag.Count;
+        }
+
+        int chosenPhase2 = phase2Bag[pIndex];
+        phase2Bag.RemoveAt(pIndex);
+        lastAttackIndex = chosenPhase2;
+        return chosenPhase2;
     }
 
     public void AddStagger(float amount)
@@ -173,10 +359,9 @@ public class BossController : MonoBehaviour
         isStaggered = true;
         staggerTimer = staggerDuration;
 
-        // Start playing looping stagger animation
         if (animator != null)
         {
-            animator.SetBool("IsStagger", true); // Matched to 'IsStagger'
+            animator.SetBool("IsStagger", true); 
         }
 
         Debug.Log("Boss staggered!");
@@ -185,8 +370,6 @@ public class BossController : MonoBehaviour
     public void GetParried()
     {
         if (isDead) return;
-
-        // Parrying fills 50% of the stagger meter instantly
         AddStagger(maxStagger * 0.5f);
     }
 
@@ -212,23 +395,6 @@ public class BossController : MonoBehaviour
         if (currentHealth <= 0)
         {
             Die();
-        }
-    }
-
-    void PerformBossAttack()
-    {
-        if (playerScript != null && playerScript.isDead) return;
-
-        lastAttackTime = Time.time;
-
-        if (animator != null)
-        {
-            animator.SetTrigger("Attack");
-        }
-
-        if (playerScript != null)
-        {
-            playerScript.TakeDamage(attackDamage, gameObject);
         }
     }
 
@@ -260,7 +426,9 @@ public class BossController : MonoBehaviour
 
         if (animator != null)
         {
-            animator.SetBool("IsStagger", false); // Matched to 'IsStagger'
+            animator.ResetTrigger("Attack");
+            animator.SetInteger("AttackIndex", 0);
+            animator.SetBool("IsStagger", false); 
             animator.SetTrigger("Die");
         }
 
