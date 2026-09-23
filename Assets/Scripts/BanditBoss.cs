@@ -11,16 +11,20 @@ public class BanditBoss : MonoBehaviour
     [Header("Boss Stats")]
     public float maxHealth = 250f;
     public float currentHealth;
-    public float moveSpeed = 4.5f;        
+    public float walkSpeed = 3.5f;          // Speed when walking close to player
+    public float runSpeed = 6.0f;           // Speed when running from farther away
     public float rotationSpeed = 12f;    
     public float gravity = 9.81f; 
     public bool isDead { get; private set; } = false;
 
-    [Header("Combat Settings")]
-    public float attackRange = 2.8f;      
-    public float attackCooldown = 1.8f;    
-    private float lastAttackTime = 0f;
+    [Header("Combat & Ranges")]
+    public float attackRange = 2.8f;        // Distance to stop and trigger attack
+    public float runRange = 6.0f;           // > 6m = Run, <= 6m = Walk
+    public float attackCooldown = 1.8f;     // Delay between attack sequences
+    public float attackDamageDelay = 0.45f; // Delay for weapon swing impact frame
     public float attackDamage = 20f;
+    private float lastAttackTime = 0f;
+    public bool isAttacking { get; private set; } = false;
 
     [Header("Stagger System")]
     public float maxStagger = 80f;      
@@ -68,6 +72,7 @@ public class BanditBoss : MonoBehaviour
     {
         if (isDead) return;
 
+        // 1. Gravity Handling
         if (controller.isGrounded && verticalVelocity < 0)
         {
             verticalVelocity = -2f; 
@@ -77,6 +82,12 @@ public class BanditBoss : MonoBehaviour
             verticalVelocity -= gravity * Time.deltaTime;
         }
 
+        // 2. Check if Animator is currently in or transitioning into an "Attacking" state
+        bool isAnimatorInAttackTag = animator != null && 
+            (animator.GetCurrentAnimatorStateInfo(0).IsTag("Attacking") || 
+             animator.GetNextAnimatorStateInfo(0).IsTag("Attacking"));
+
+        // 3. Stagger Handling
         if (isStaggered)
         {
             staggerTimer -= Time.deltaTime;
@@ -92,6 +103,15 @@ public class BanditBoss : MonoBehaviour
             return; 
         }
 
+        // 4. Freeze horizontal movement completely during Attack animations or attack routine
+        if (isAnimatorInAttackTag || isAttacking)
+        {
+            UpdateAnimationSpeed(0f);
+            controller.Move(new Vector3(0, verticalVelocity, 0) * Time.deltaTime);
+            return;
+        }
+
+        // Decay stagger over time
         if (currentStagger > 0f)
         {
             currentStagger = Mathf.Clamp(currentStagger - staggerDecayRate * Time.deltaTime, 0f, maxStagger);
@@ -102,6 +122,7 @@ public class BanditBoss : MonoBehaviour
             playerScript = playerTransform.GetComponent<HUDPlayer>();
         }
 
+        // Idle state if not awakened or player is dead
         if (!isAwakened || playerTransform == null || (playerScript != null && playerScript.isDead)) 
         {
             UpdateAnimationSpeed(0f);
@@ -113,28 +134,53 @@ public class BanditBoss : MonoBehaviour
         Vector3 dirToPlayer = (playerTransform.position - transform.position).normalized;
         dirToPlayer.y = 0;
 
+        // Turn to face player
         if (dirToPlayer != Vector3.zero)
         {
             Quaternion lookRot = Quaternion.LookRotation(dirToPlayer);
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, rotationSpeed * Time.deltaTime);
         }
 
-        float targetAnimSpeed = 0f;
-        Vector3 moveVelocity = Vector3.zero;
-
+        // 5. Locomotion & Range Logic
         if (distanceToPlayer > attackRange)
         {
-            moveVelocity = dirToPlayer * moveSpeed;
-            targetAnimSpeed = 1f; 
-        }
-        else if (Time.time >= lastAttackTime + attackCooldown)
-        {
-            PerformBossAttack();
-        }
+            // Clear lingering Attack trigger so it doesn't queue up unwanted swings
+            if (animator != null)
+            {
+                animator.ResetTrigger("Attack");
+            }
 
-        moveVelocity.y = verticalVelocity;
-        controller.Move(moveVelocity * Time.deltaTime);
-        UpdateAnimationSpeed(targetAnimSpeed);
+            // Move towards player with Walk or Run speed depending on distance
+            float moveSpeed;
+            float targetAnimSpeed;
+
+            if (distanceToPlayer > runRange)
+            {
+                moveSpeed = runSpeed;
+                targetAnimSpeed = 1.0f; // Drives Run animation
+            }
+            else
+            {
+                moveSpeed = walkSpeed;
+                targetAnimSpeed = 0.5f; // Drives Walk animation
+            }
+
+            Vector3 moveVelocity = dirToPlayer * moveSpeed;
+            moveVelocity.y = verticalVelocity;
+            controller.Move(moveVelocity * Time.deltaTime);
+            UpdateAnimationSpeed(targetAnimSpeed);
+        }
+        else
+        {
+            // Within attack range -> Stop moving and attack if cooldown is ready
+            UpdateAnimationSpeed(0f);
+            controller.Move(new Vector3(0, verticalVelocity, 0) * Time.deltaTime);
+
+            if (Time.time >= lastAttackTime + attackCooldown)
+            {
+                PerformBossAttack();
+            }
+        }
     }
 
     void PerformBossAttack()
@@ -142,16 +188,55 @@ public class BanditBoss : MonoBehaviour
         if (playerScript != null && playerScript.isDead) return;
 
         lastAttackTime = Time.time;
+
+        // Pick random attack index (1, 2, or 3)
+        int attackIndex = Random.Range(1, 4); 
         if (animator != null)
         {
+            animator.ResetTrigger("Attack"); // Clean trigger state
+            animator.SetInteger("AttackIndex", attackIndex);
             animator.SetTrigger("Attack");
         }
 
-        if (playerScript != null)
+        StartCoroutine(ApplyAttackDamageRoutine(attackIndex));
+    }
+
+    private IEnumerator ApplyAttackDamageRoutine(int attackIndex)
+    {
+        isAttacking = true;
+
+        // Wait 1 frame so Animator registers transition into the attack state
+        yield return null;
+
+        // Reset trigger immediately so it cannot re-trigger automatically
+        if (animator != null)
         {
-            playerScript.TakeDamage(attackDamage, gameObject);
-            Debug.Log("Bandit King directly attacked player for " + attackDamage + " damage!");
+            animator.ResetTrigger("Attack");
         }
+
+        // Delay to match weapon swing impact frame
+        yield return new WaitForSeconds(attackDamageDelay);
+
+        // Apply damage if player is still within hit range (+ tolerance)
+        if (!isStaggered && !isDead && playerScript != null && !playerScript.isDead)
+        {
+            float currentDist = Vector3.Distance(transform.position, playerTransform.position);
+            if (currentDist <= attackRange + 0.8f)
+            {
+                playerScript.TakeDamage(attackDamage, gameObject);
+                Debug.Log($"Bandit King executed Attack #{attackIndex} hitting player for {attackDamage} damage!");
+            }
+        }
+
+        // Wait until attack animation finishes playing in Animator
+        while (animator != null && 
+              (animator.GetCurrentAnimatorStateInfo(0).IsTag("Attacking") || 
+               animator.GetNextAnimatorStateInfo(0).IsTag("Attacking")))
+        {
+            yield return null;
+        }
+
+        isAttacking = false;
     }
 
     public void AddStagger(float amount)
@@ -164,9 +249,12 @@ public class BanditBoss : MonoBehaviour
     private void TriggerStagger()
     {
         isStaggered = true;
+        isAttacking = false;
         staggerTimer = staggerDuration;
+
         if (animator != null)
         {
+            animator.ResetTrigger("Attack");
             animator.SetBool("IsStagger", true); 
         }
         Debug.Log("Bandit King staggered!");
@@ -216,9 +304,11 @@ public class BanditBoss : MonoBehaviour
     void Die()
     {
         isDead = true;
+        isAttacking = false;
 
         if (animator != null)
         {
+            animator.ResetTrigger("Attack");
             animator.SetBool("IsStagger", false); 
             animator.SetTrigger("Die");
         }

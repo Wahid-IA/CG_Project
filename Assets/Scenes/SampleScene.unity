@@ -18633,13 +18633,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BanditBoss
   playerTransform: {fileID: 797540241}
-  maxHealth: 80
+  maxHealth: 150
   currentHealth: 0
-  moveSpeed: 4.5
+  walkSpeed: 3.5
+  runSpeed: 6
   rotationSpeed: 12
   gravity: 9.81
   attackRange: 2.8
+  runRange: 6
   attackCooldown: 1.8
+  attackDamageDelay: 0.45
   attackDamage: 20
   maxStagger: 80
   currentStagger: 0
@@ -64877,7 +64880,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -5.9757752
+      value: -4.8
       objectReference: {fileID: 0}
     - target: {fileID: 400010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
       propertyPath: m_LocalPosition.y
@@ -64885,7 +64888,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 400010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 65.7944
+      value: 108.2
       objectReference: {fileID: 0}
     - target: {fileID: 400010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
       propertyPath: m_LocalRotation.w
@@ -64919,6 +64922,18 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: 2d6adf4ee38b89141b068727dac33397, type: 2}
+    - target: {fileID: 9500000, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
+      propertyPath: m_WarningMessage
+      value: "\nBinding warning: Some generic clip(s) animate transforms that are
+        already bound by a Humanoid avatar. These transforms can only be changed
+        by Humanoid clips.\n\tTransform 'ORK_LeftForeArm'\n\tTransform 'ORK_Spine'\n\tTransform
+        'ORK_Neck'\n\tTransform 'ORK_Spine2'\n\tTransform 'ORK_LeftArm'\n\tTransform
+        'ORK_Spine1'\n\tTransform 'ORK_Head'\n\tTransform 'ORK_RightForeArm'\n\tTransform
+        'ORK_RightArm'\n\tTransform 'ORK_RightLeg'\n\tand more ...\n\tFrom animation
+        clip 'death4'\n\tFrom animation clip 'gethit'\n\tFrom animation clip 'atack3'\n\tFrom
+        animation clip 'atack5'\n\tFrom animation clip 'atack19'\n\tFrom animation
+        clip 'idle4'\n\tFrom animation clip 'run'"
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 100000, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
@@ -99812,6 +99827,19 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: ce8d02c7486f329448546e35400d755c, type: 2}
+    - target: {fileID: 9500000, guid: 8d04ac4429a0669408c96276dc933726, type: 3}
+      propertyPath: m_WarningMessage
+      value: "\nBinding warning: Some generic clip(s) animate transforms that are
+        already bound by a Humanoid avatar. These transforms can only be changed
+        by Humanoid clips.\n\tTransform 'ORK_LeftFoot'\n\tTransform 'ORK_LeftForeArm'\n\tTransform
+        'ORK_Spine'\n\tTransform 'ORK_Neck'\n\tTransform 'ORK_Spine2'\n\tTransform
+        'ORK_LeftArm'\n\tTransform 'ORK_Spine1'\n\tTransform 'ORK_Head'\n\tTransform
+        'ORK_RightForeArm'\n\tTransform 'ORK_RightArm'\n\tand more ...\n\tFrom animation
+        clip 'idle1'\n\tFrom animation clip 'idle2'\n\tFrom animation clip 'idle3'\n\tFrom
+        animation clip 'idle4'\n\tFrom animation clip 'idle5'\n\tFrom animation clip
+        'walk1'\n\tFrom animation clip 'walk1'\n\tFrom animation clip 'walk2'\n\tFrom
+        animation clip 'walk2'\n\tFrom animation clip 'walk3'\n\tand more ..."
+      objectReference: {fileID: 0}
     - target: {fileID: 13700000, guid: 8d04ac4429a0669408c96276dc933726, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
