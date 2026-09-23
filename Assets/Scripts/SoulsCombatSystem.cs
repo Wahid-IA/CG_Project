@@ -186,8 +186,8 @@ public class SoulsCombatSystem : MonoBehaviour
                 BanditBoss banditBoss = col.GetComponentInParent<BanditBoss>();
                 if (banditBoss != null) banditBoss.TakeDamage(attackDamage);
 
-                Bandit regularBandit = col.GetComponentInParent<Bandit>();
-                if (regularBandit != null) regularBandit.TakeDamage(attackDamage);
+                GoblinBoss goblinBoss = col.GetComponentInParent<GoblinBoss>();
+                if (goblinBoss != null) goblinBoss.TakeDamage(attackDamage);
 
                 BossController boss = col.GetComponentInParent<BossController>();
                 if (boss != null) boss.TakeDamage(attackDamage);
