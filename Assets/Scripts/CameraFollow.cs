@@ -15,13 +15,31 @@ public class CameraFollow : MonoBehaviour
 
     void Start()
     {
-        Vector3 angles = transform.eulerAngles;
-        currentX = angles.y;
-        currentY = angles.x;
+        SyncRotationFromTransform();
 
         // Lock and hide cursor during gameplay
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    void OnEnable()
+    {
+        // Re-synchronize camera angles whenever script is re-enabled
+        SyncRotationFromTransform();
+    }
+
+    /// <summary>
+    /// Reads current camera transform euler angles into currentX and currentY.
+    /// </summary>
+    public void SyncRotationFromTransform()
+    {
+        Vector3 angles = transform.eulerAngles;
+        currentX = angles.y;
+        currentY = angles.x;
+
+        // Convert Unity 0..360 range to -180..180 for proper clamping
+        if (currentY > 180f) currentY -= 360f;
+        currentY = Mathf.Clamp(currentY, yMinLimit, yMaxLimit);
     }
 
     void LateUpdate()
@@ -42,7 +60,5 @@ public class CameraFollow : MonoBehaviour
             transform.rotation = rotation;
             transform.position = position;
         }
-
-        // 2. Removed duplicate KeyCode.Escape check here so PauseMenu handles cursor toggling
     }
 }

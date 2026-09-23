@@ -24,15 +24,11 @@ public class InGameMainMenu : MonoBehaviour
 
     [Header("Transition Settings")]
     public float fadeDuration = 0.4f;
-    public float standUpDelay = 0.6f; 
-    public float transitionDuration = 1.0f; 
+    [Tooltip("Matches Left Turn clip length (~1.6 seconds).")]
+    public float transitionDuration = 1.6f; 
 
-    [Header("Walk & Stand Settings")]
-    public float turnAngleOffset = 0f;
-    public float moveForwardDistance = 0.8f;
-    public string walkAnimBoolName = "IsMoving"; 
-    public string walkSpeedFloatName = "Speed";
-    public float walkSpeedValue = 1.0f;
+    [Tooltip("Curve controlling zoom-out speed and camera pullback smoothing.")]
+    public AnimationCurve transitionCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
     public static bool isMainMenuActive = true;
 
@@ -75,7 +71,6 @@ public class InGameMainMenu : MonoBehaviour
 
     void LateUpdate()
     {
-        // Continuously update camera during main menu to track physics/animations correctly
         if (isMainMenuActive && playerTransform != null)
         {
             PositionMenuCamera();
@@ -86,7 +81,6 @@ public class InGameMainMenu : MonoBehaviour
     {
         if (playerTransform == null || mainCam == null) return;
 
-        // Calculate unscaled offsets so object scale doesn't distort camera position
         Vector3 menuWorldPos = playerTransform.position + (playerTransform.rotation * menuLocalOffset);
         Vector3 lookWorldTarget = playerTransform.position + (playerTransform.rotation * lookAtLocalOffset);
 
@@ -101,7 +95,7 @@ public class InGameMainMenu : MonoBehaviour
 
     private IEnumerator StartGameSequence()
     {
-        isMainMenuActive = false; // Stop LateUpdate positioning override
+        isMainMenuActive = false; // Stop LateUpdate menu camera tracking
 
         if (playerAnimator == null && playerTransform != null)
         {
@@ -125,90 +119,67 @@ public class InGameMainMenu : MonoBehaviour
 
         if (mainMenuCanvasGroup != null) mainMenuCanvasGroup.gameObject.SetActive(false);
 
-        // 2. Trigger Stand Up Animation
+        // 2. Trigger Stand Up / Exit Sitting Animation (Left Turn)
         if (playerAnimator != null)
         {
             playerAnimator.SetBool("IsSitting", false);
             playerAnimator.SetTrigger("StandUp");
         }
 
-        yield return new WaitForSeconds(standUpDelay);
-
-        // 3. Blend camera smoothly to gameplay position
+        // 3. Zoom out camera with STRICTLY FIXED rotation while player aligns to camera view
         if (playerTransform != null && mainCam != null && cameraFollowScript != null)
         {
-            SetWalkAnimation(true);
-
             Vector3 camStartPos = mainCam.transform.position;
-            Quaternion camStartRot = mainCam.transform.rotation;
+            
+            // Freeze camera rotation to exact menu perspective (NO ROTATION DURING TRANSITION)
+            Quaternion fixedCamRotation = mainCam.transform.rotation;
 
+            // Compute player target rotation so they end up facing forward in camera's view direction
             Quaternion playerStartRot = playerTransform.rotation;
-            Quaternion playerTargetRot = Quaternion.Euler(0f, playerTransform.eulerAngles.y + turnAngleOffset, 0f);
+            Vector3 camForwardFlat = Vector3.ProjectOnPlane(fixedCamRotation * Vector3.forward, Vector3.up).normalized;
+            Quaternion playerTargetRot = Quaternion.LookRotation(camForwardFlat);
 
             elapsedTime = 0f;
             while (elapsedTime < transitionDuration)
             {
                 elapsedTime += Time.deltaTime;
                 float t = elapsedTime / transitionDuration;
-                float smoothT = Mathf.SmoothStep(0f, 1f, t);
+                float smoothT = transitionCurve != null ? transitionCurve.Evaluate(t) : Mathf.SmoothStep(0f, 1f, t);
 
-                // Smooth player turn
+                // Target gameplay position (Zoomed out & offset up) based on fixed camera angle
+                Vector3 targetGameplayPos = playerTransform.position 
+                                            + cameraFollowScript.targetOffset 
+                                            - (fixedCamRotation * Vector3.forward * cameraFollowScript.distance);
+
+                // 1. Translate camera position straight back and up
+                mainCam.transform.position = Vector3.Lerp(camStartPos, targetGameplayPos, smoothT);
+                
+                // 2. Lock camera rotation
+                mainCam.transform.rotation = fixedCamRotation;
+
+                // 3. Turn player smoothly during the animation to match camera view direction
                 playerTransform.rotation = Quaternion.Slerp(playerStartRot, playerTargetRot, smoothT);
-
-                // Forward step movement
-                if (moveForwardDistance > 0f)
-                {
-                    float moveStep = (moveForwardDistance / transitionDuration) * Time.deltaTime;
-                    playerTransform.position += playerTransform.forward * moveStep;
-                }
-
-                // Blend camera toward cameraFollowScript position
-                Vector3 gameplayTargetPos = GetGameplayCameraPosition();
-                Quaternion gameplayTargetRot = GetGameplayCameraRotation();
-
-                mainCam.transform.position = Vector3.Lerp(camStartPos, gameplayTargetPos, smoothT);
-                mainCam.transform.rotation = Quaternion.Slerp(camStartRot, gameplayTargetRot, smoothT);
 
                 yield return null;
             }
 
-            SetWalkAnimation(false);
+            // Lock exact final pose and position
+            mainCam.transform.rotation = fixedCamRotation;
+            playerTransform.rotation = playerTargetRot;
+            mainCam.transform.position = playerTransform.position 
+                                        + cameraFollowScript.targetOffset 
+                                        - (fixedCamRotation * Vector3.forward * cameraFollowScript.distance);
         }
 
-        // 4. Enable gameplay controls
-        if (cameraFollowScript != null) cameraFollowScript.enabled = true;
+        // 4. Hand off directly to gameplay controls with zero camera angle shift
+        if (cameraFollowScript != null) 
+        {
+            cameraFollowScript.SyncRotationFromTransform();
+            cameraFollowScript.enabled = true;
+        }
+
         if (playerControllerScript != null) playerControllerScript.enabled = true;
         if (hudContainer != null) hudContainer.SetActive(true);
-    }
-
-    private Vector3 GetGameplayCameraPosition()
-    {
-        if (cameraFollowScript == null || playerTransform == null) return mainCam.transform.position;
-
-        Quaternion rotation = Quaternion.Euler(15f, playerTransform.eulerAngles.y, 0f);
-        Vector3 targetPosition = playerTransform.position + cameraFollowScript.targetOffset;
-        return targetPosition - (rotation * Vector3.forward * cameraFollowScript.distance);
-    }
-
-    private Quaternion GetGameplayCameraRotation()
-    {
-        if (playerTransform == null) return mainCam.transform.rotation;
-        return Quaternion.Euler(15f, playerTransform.eulerAngles.y, 0f);
-    }
-
-    private void SetWalkAnimation(bool isWalking)
-    {
-        if (playerAnimator == null) return;
-
-        if (!string.IsNullOrEmpty(walkAnimBoolName))
-        {
-            playerAnimator.SetBool(walkAnimBoolName, isWalking);
-        }
-
-        if (!string.IsNullOrEmpty(walkSpeedFloatName))
-        {
-            playerAnimator.SetFloat(walkSpeedFloatName, isWalking ? walkSpeedValue : 0f);
-        }
     }
 
     public void OnQuitClicked()
