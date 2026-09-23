@@ -10408,6 +10408,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2521801161966013283, guid: e8e4aed914da9844a9d53cec3dc8f5ad, type: 3}
   m_PrefabInstance: {fileID: 161121121}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &161269056
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 161269059}
+  - component: {fileID: 161269058}
+  - component: {fileID: 161269057}
+  m_Layer: 0
+  m_Name: agrootrigger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &161269057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 161269056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70cf864a70214934f8de1482f1c1221c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GoblinBossAggroTrigger
+  goblinBoss: {fileID: 2116993649}
+  bossHealthBarUI: {fileID: 1564065459}
+--- !u!135 &161269058
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 161269056}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 10
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!4 &161269059
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 161269056}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -6.02571, y: 2.00166, z: 69.88026}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &161963598 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4475303879003710953, guid: 64af419458a0ff24180090f69ffdc3db, type: 3}
@@ -59280,7 +59348,7 @@ GameObject:
   - component: {fileID: 1047200004}
   - component: {fileID: 1047200008}
   - component: {fileID: 1047200007}
-  - component: {fileID: 1047200010}
+  - component: {fileID: 1047200009}
   m_Layer: 5
   m_Name: BossHUDCanvas
   m_TagString: Enemy
@@ -59295,7 +59363,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1047200003}
-  m_LocalRotation: {x: -0, y: -0.9999404, z: 0, w: 0.010922493}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
   m_ConstrainProportionsScale: 0
@@ -59356,7 +59424,7 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
---- !u!114 &1047200010
+--- !u!114 &1047200009
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -59365,9 +59433,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1047200003}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c1ba51aaf30303e49abe16c33c840d59, type: 3}
+  m_Script: {fileID: 11500000, guid: 927182283ea75554e9281c47f219e7f5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BanditHealthBarUI
+  m_EditorClassIdentifier: Assembly-CSharp::BanditBossHealthBarUI
+  healthBarContainer: {fileID: 1047200003}
+  bossBarFill: {fileID: 1269056513}
+  bossStaggerBarFill: {fileID: 0}
+  banditBoss: {fileID: 323445333}
 --- !u!1001 &1048281335
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -64807,7 +64879,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 100010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
       propertyPath: m_Name
-      value: Bandit
+      value: Goblin
       objectReference: {fileID: 0}
     - target: {fileID: 100010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
       propertyPath: m_TagString
@@ -64867,13 +64939,10 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 100010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2116993646}
+      addedObject: {fileID: 2116993650}
     - targetCorrespondingSourceObject: {fileID: 100010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2116993645}
-    - targetCorrespondingSourceObject: {fileID: 100010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2116993647}
+      addedObject: {fileID: 2116993649}
   m_SourcePrefab: {fileID: 100100000, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
 --- !u!1001 &1149711084
 PrefabInstance:
@@ -89542,29 +89611,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1564065458}
-  - component: {fileID: 1564065457}
+  - component: {fileID: 1564065459}
   m_Layer: 0
-  m_Name: BanditHealthBarUI
+  m_Name: GoblinHealthBarUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1564065457
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1564065456}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 271ea44f6eef64e4eab03246d9d2c450, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BanditHealthBarUI
-  healthBarContainer: {fileID: 1047200003}
-  bossBarFill: {fileID: 2165026}
-  banditScript: {fileID: 2116993645}
 --- !u!4 &1564065458
 Transform:
   m_ObjectHideFlags: 0
@@ -89580,6 +89634,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1564065459
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1564065456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c85428e0709ea194d86c95d0da4664e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GoblinBossHealthBarUI
+  healthBarContainer: {fileID: 1636267505}
+  bossBarFill: {fileID: 2165026}
+  bossStaggerBarFill: {fileID: 0}
+  goblinBoss: {fileID: 2116993649}
 --- !u!1001 &1565687173
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -92745,7 +92815,7 @@ GameObject:
   - component: {fileID: 1636267506}
   - component: {fileID: 1636267509}
   - component: {fileID: 1636267508}
-  - component: {fileID: 1636267507}
+  - component: {fileID: 1636267510}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -92760,36 +92830,19 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1636267505}
-  m_LocalRotation: {x: 0, y: -0.99994034, z: 0, w: 0.010925557}
+  m_LocalRotation: {x: 0, y: -0.7372775, z: 0, w: 0.67559004}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.01, y: 0.01, z: 0.01}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1538665820}
   m_Father: {fileID: 2116993644}
-  m_LocalEulerAnglesHint: {x: 0, y: -178.748, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 625, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 2.5}
   m_SizeDelta: {x: 1028, y: 625}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1636267507
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1636267505}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
-  m_IgnoreReversedGraphics: 1
-  m_BlockingObjects: 0
-  m_BlockingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
 --- !u!114 &1636267508
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -92837,6 +92890,22 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &1636267510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1636267505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c85428e0709ea194d86c95d0da4664e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GoblinBossHealthBarUI
+  healthBarContainer: {fileID: 1636267505}
+  bossBarFill: {fileID: 2165026}
+  bossStaggerBarFill: {fileID: 0}
+  goblinBoss: {fileID: 2116993649}
 --- !u!1 &1636658525
 GameObject:
   m_ObjectHideFlags: 0
@@ -94067,10 +94136,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1659047071}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 25c68d031b3e23a4f99b350073d6cfa3, type: 3}
+  m_Script: {fileID: 11500000, guid: 87d2b0f7ae2367341a66eb5524b132fe, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BanditAggroTrigger
-  banditBossController: {fileID: 323445333}
+  m_EditorClassIdentifier: Assembly-CSharp::BossAggroTrigger
+  bossController: {fileID: 0}
+  bossHealthBarUI: {fileID: 0}
 --- !u!1001 &1659091127
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -123163,7 +123233,7 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 400010, guid: 9ba437e07b4055c4aa4e2a95cbac09ae, type: 3}
   m_PrefabInstance: {fileID: 1149472061}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &2116993645
+--- !u!114 &2116993649
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -123172,12 +123242,27 @@ MonoBehaviour:
   m_GameObject: {fileID: 2116993642}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8a067986f1ef9847a5af3feaf436891, type: 3}
+  m_Script: {fileID: 11500000, guid: f4648195a8be88a40b96b5e830ff19e7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Bandit
+  m_EditorClassIdentifier: Assembly-CSharp::GoblinBoss
+  playerTransform: {fileID: 797540241}
   maxHealth: 80
-  banditRenderer: {fileID: 0}
---- !u!143 &2116993646
+  currentHealth: 0
+  moveSpeed: 6.5
+  rotationSpeed: 16
+  gravity: 9.81
+  attackRange: 2
+  attackCooldown: 1.2
+  attackDamage: 14
+  maxStagger: 50
+  currentStagger: 0
+  defaultStaggerPerHit: 25
+  staggerDecayRate: 8
+  staggerDuration: 1.5
+  isAwakened: 0
+  speedDampTime: 0.1
+  bossRenderer: {fileID: 0}
+--- !u!143 &2116993650
 CharacterController:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -123202,29 +123287,6 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1.2, z: 0}
---- !u!136 &2116993647
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2116993642}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1
-  m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &2117916985
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -125134,3 +125196,4 @@ SceneRoots:
   - {fileID: 1149472061}
   - {fileID: 1564065458}
   - {fileID: 1238802893}
+  - {fileID: 161269059}
